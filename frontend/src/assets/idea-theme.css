@@ -1,0 +1,115 @@
+/*
+ * アイデア機能（登録・閲覧）で共有するデザイントークンと共通クラス。
+ * 地域活性化＝土地に根ざす、というテーマから、深緑（主色）と土色に近い黄土色（差し色）を採用。
+ */
+:root {
+  --idea-color-bg: #fbfaf7;
+  --idea-color-surface: #ffffff;
+  --idea-color-primary: #1f3d2b;
+  --idea-color-primary-dark: #142a1d;
+  --idea-color-accent: #c98a2c;
+  --idea-color-text: #1a2233;
+  --idea-color-text-muted: #5b6570;
+  --idea-color-border: #ddd8cc;
+  --idea-color-danger: #b3261e;
+  --idea-color-danger-bg: #f7e9e7;
+  --idea-color-success-bg: #e4efe6;
+  --idea-color-success-text: #1f3d2b;
+  --idea-color-failure-bg: #f5e9e3;
+  --idea-color-failure-text: #8a4b1f;
+
+  --idea-radius: 6px;
+  --idea-spacing-sm: 8px;
+  --idea-spacing-md: 16px;
+  --idea-spacing-lg: 32px;
+}
+
+.idea-page-header {
+  margin-bottom: var(--idea-spacing-lg);
+}
+
+.idea-page-header h1 {
+  margin: 0 0 var(--idea-spacing-sm);
+  font-size: 1.5rem;
+  color: var(--idea-color-text);
+}
+
+.idea-page-description {
+  margin: 0;
+  color: var(--idea-color-text-muted);
+  line-height: 1.7;
+}
+
+.idea-banner {
+  padding: var(--idea-spacing-sm) var(--idea-spacing-md);
+  border-radius: var(--idea-radius);
+  margin-bottom: var(--idea-spacing-md);
+  font-size: 0.9rem;
+}
+
+.idea-banner--success {
+  background: var(--idea-color-success-bg);
+  color: var(--idea-color-success-text);
+}
+
+.idea-banner--error {
+  background: var(--idea-color-danger-bg);
+  color: var(--idea-color-danger);
+}
+
+.idea-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: 1px solid var(--idea-color-primary);
+  border-radius: var(--idea-radius);
+  background: var(--idea-color-primary);
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.idea-button:hover {
+  background: var(--idea-color-primary-dark);
+}
+
+.idea-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.idea-button--secondary {
+  background: transparent;
+  color: var(--idea-color-primary);
+}
+
+.idea-button--secondary:hover {
+  background: var(--idea-color-success-bg);
+}
+
+.idea-status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.idea-status-badge--success {
+  background: var(--idea-color-success-bg);
+  color: var(--idea-color-success-text);
+}
+
+.idea-status-badge--failure {
+  background: var(--idea-color-failure-bg);
+  color: var(--idea-color-failure-text);
+}
+
+.idea-empty-state,
+.idea-loading-indicator {
+  padding: var(--idea-spacing-lg) 0;
+  color: var(--idea-color-text-muted);
+  text-align: center;
+}
