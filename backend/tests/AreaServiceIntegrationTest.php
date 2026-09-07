@@ -6,12 +6,10 @@
  * NOTE:
  * - backend/src/Core/Database.php はまだ存在しないため、
  *   backend/tests/support/TestDatabase.php で直接PDO接続している
- *   （Core/Database.php完成後は、このテストをDatabase::getConnection()経由に
- *   置き換えて問題ない。AreaService/Area/FeatureTagはPDOを注入できる作りにしてある）
- * - 実行前に、backend/database/migrations/002_create_areas_table.sql を
- *   対象のPostgreSQLに一度適用しておくこと
+ * - areasテーブルは他メンバー実装の初期スキーマで作成済み（user_id NOT NULL）。
+ *   このテストは、テスト用のダミーユーザーを1件作成してそのIDを使う
  * - このテストは全ての変更を1つのトランザクション内で行い、最後に必ずロールバックする。
- *   実行してもDBにデータは残らない
+ *   実行してもDBにデータは残らない（ダミーユーザーも含む）
  *
  * 実行方法:
  *   php backend/tests/AreaServiceIntegrationTest.php
@@ -59,13 +57,11 @@ function assertEquals($expected, $actual, string $message): void
 
 $pdo = TestDatabase::connect();
 
-// areasテーブルが存在するか事前確認（マイグレーション未実行なら案内して終了する）
 $existsStmt = $pdo->query("SELECT to_regclass('public.areas') IS NOT NULL AS table_exists");
 $tableExists = $existsStmt->fetchColumn();
 
 if (!$tableExists || $tableExists === 'f') {
-    echo "areasテーブルが見つかりません。先に以下を実行してください:\n";
-    echo "  psql -h <host> -U <user> -d <dbname> -f backend/database/migrations/002_create_areas_table.sql\n";
+    echo "areasテーブルが見つかりません。初期スキーマが適用されているか確認してください。\n";
     exit(1);
 }
 
@@ -73,18 +69,43 @@ if (!$tableExists || $tableExists === 'f') {
 $pdo->beginTransaction();
 
 try {
+    // テスト用のダミーユーザーを作成（areas.user_idのFK制約を満たすため）
+    $userStmt = $pdo->prepare(
+        "INSERT INTO users (name, email, password_hash, role)
+         VALUES (:name, :email, :password_hash, 'user')
+         RETURNING id"
+    );
+    $userStmt->execute([
+        'name' => '統合テスト用ユーザー',
+        'email' => 'area-integration-test@example.com',
+        'password_hash' => 'dummy-hash',
+    ]);
+    $testUserId = (int) $userStmt->fetchColumn();
+    assertTrue($testUserId > 0, 'テスト用ユーザーを作成できる');
+
+    $otherUserStmt = $pdo->prepare(
+        "INSERT INTO users (name, email, password_hash, role)
+         VALUES (:name, :email, :password_hash, 'user')
+         RETURNING id"
+    );
+    $otherUserStmt->execute([
+        'name' => '別のユーザー',
+        'email' => 'area-integration-test-other@example.com',
+        'password_hash' => 'dummy-hash',
+    ]);
+    $otherUserId = (int) $otherUserStmt->fetchColumn();
+
     $service = new AreaService($pdo);
 
-    echo "登録: タグ付きでAreaを新規作成\n";
-    $created = $service->create([
+    echo "\n登録: タグ付きでAreaを新規作成\n";
+    $created = $service->create($testUserId, [
         'name' => 'テスト地区',
-        'prefecture' => 'テスト県',
-        'city' => 'テスト市',
-        'description' => '統合テスト用の説明文',
+        'features' => '統合テスト用の特色',
+        'address' => 'テスト県テスト市1-1-1',
         'tags' => ['温泉', '自然が多い'],
     ]);
     assertTrue($created['id'] > 0, '作成されたAreaにIDが振られる（RETURNING idが機能している）');
-    assertEquals('テスト地区', $created['name'], 'nameが保存される');
+    assertEquals($testUserId, (int) $created['user_id'], 'user_idが登録者として保存される');
     assertEquals(2, count($created['tags']), 'タグが2件紐づく');
 
     echo "\n登録: 既存タグを再利用し、新規タグは作らない\n";
@@ -92,11 +113,9 @@ try {
         "SELECT COUNT(*) FROM feature_tags WHERE name = '温泉'"
     )->fetchColumn();
 
-    $created2 = $service->create([
+    $created2 = $service->create($testUserId, [
         'name' => 'テスト地区2',
-        'prefecture' => 'テスト県',
-        'city' => 'テスト市2',
-        'description' => '2件目の説明文',
+        'features' => '2件目の特色',
         'tags' => ['温泉', '学生の町'],
     ]);
 
@@ -106,19 +125,35 @@ try {
 
     assertEquals($tagCountBefore, $tagCountAfter, '既存タグ「温泉」は新規作成されず再利用される（find-or-create）');
 
-    echo "\n更新: タグの入れ替え\n";
-    $updated = $service->update($created['id'], [
+    echo "\n更新: 登録者本人による更新は成功する\n";
+    $updated = $service->update($created['id'], $testUserId, [
         'name' => 'テスト地区',
-        'prefecture' => 'テスト県',
-        'city' => 'テスト市',
-        'description' => '更新後の説明文',
-        'tags' => ['学生の町'], // 温泉・自然が多い を外し、学生の町だけにする
+        'features' => '更新後の特色',
+        'tags' => ['学生の町'],
     ]);
     $updatedTagNames = array_column($updated['tags'], 'name');
     assertEquals(['学生の町'], $updatedTagNames, 'attachTags()によりタグが指定通りに入れ替わる');
 
-    echo "\n削除: Areaを削除すると中間テーブルの紐づけもCASCADEで消える\n";
-    $service->delete($created2['id']);
+    echo "\n異常系: 他人のAreaは更新できない（403相当）\n";
+    $forbidden = false;
+    try {
+        $service->update($created['id'], $otherUserId, ['name' => '乗っ取り']);
+    } catch (\RuntimeException $e) {
+        $forbidden = ($e->getCode() === 403);
+    }
+    assertTrue($forbidden, '登録者以外が更新しようとすると403相当の例外になる');
+
+    echo "\n異常系: 他人のAreaは削除できない（403相当）\n";
+    $forbiddenDelete = false;
+    try {
+        $service->delete($created['id'], $otherUserId);
+    } catch (\RuntimeException $e) {
+        $forbiddenDelete = ($e->getCode() === 403);
+    }
+    assertTrue($forbiddenDelete, '登録者以外が削除しようとすると403相当の例外になる');
+
+    echo "\n削除: 登録者本人による削除は成功し、中間テーブルの紐づけもCASCADEで消える\n";
+    $service->delete($created2['id'], $testUserId);
 
     $isDeleted = false;
     try {
@@ -135,19 +170,14 @@ try {
     echo "\n異常系: バリデーションエラー時はDBに書き込まれない\n";
     $countBefore = (int) $pdo->query('SELECT COUNT(*) FROM areas')->fetchColumn();
     try {
-        $service->create([
-            'name' => '',
-            'prefecture' => 'テスト県',
-            'city' => 'テスト市',
-            'description' => '',
-        ]);
+        $service->create($testUserId, ['name' => '']);
         assertTrue(false, '例外が投げられるべき');
     } catch (AreaValidationException $e) {
         $countAfter = (int) $pdo->query('SELECT COUNT(*) FROM areas')->fetchColumn();
         assertEquals($countBefore, $countAfter, 'バリデーションエラー時はレコードが増えない');
     }
 } finally {
-    // テストで作成したデータは全てロールバックし、DBには何も残さない
+    // テストで作成したデータ（ダミーユーザーを含む）は全てロールバックし、DBには何も残さない
     $pdo->rollBack();
 }
 
