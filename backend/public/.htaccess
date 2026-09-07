@@ -1,0 +1,7 @@
+# index.php が PATH_INFO (例: index.php/ideas の "/ideas" 部分) を
+# 受け取れるようにするための設定。
+#
+# サーバーの設定次第では AcceptPathInfo がデフォルトで無効になっており、
+# その場合 index.php/ideas のようなURLはPHPに渡る前に404になってしまう。
+# 明示的にOnにしておくことで、デプロイ環境に依存せずPATH_INFOルーティングが動く。
+AcceptPathInfo On

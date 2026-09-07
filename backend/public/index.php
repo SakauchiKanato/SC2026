@@ -28,10 +28,14 @@ require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
 // require_once __DIR__ . '/../src/Controllers/Company/CompanyController.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-$uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// index.php がドキュメントルート直下にある前提で、/api 以下のパスだけ取り出す
-$path = preg_replace('#^/api#', '', $uri);
+// PATH_INFOを使う（REQUEST_URIから素直に切り出す方式だと、共用サーバーの
+// https://example.com/~user/プロジェクト名/backend/public/index.php のように
+// index.phpが深い階層に置かれた場合にパスの切り出しがずれてしまうため）。
+// index.php/ideas のようにindex.phpを明示したURLでアクセスすれば、
+// index.php以降の部分がPATH_INFOとしてどんな設置階層でも正しく取れる。
+// （Apache + PHPの標準機能で、rewriteルールの設定は不要）
+$path = $_SERVER['PATH_INFO'] ?? '/';
 $path = rtrim($path, '/');
 if ($path === '') {
     $path = '/';
@@ -47,9 +51,9 @@ if ($path === '/health') {
 
 // ルーティング定義：[HTTPメソッド, パスのパターン, コントローラー, メソッド名]
 $routes = [
-    ['GET',  '#^/ideas$#',       'IdeaController', 'index'],
-    ['GET',  '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
-    ['POST', '#^/ideas$#',       'IdeaController', 'store'],
+    ['GET',    '#^/ideas$#',       'IdeaController', 'index'],
+    ['GET',    '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
+    ['POST',   '#^/ideas$#',       'IdeaController', 'store'],
 
     ['POST', '#^/signup$#', 'AuthController', 'signup'],
     ['POST', '#^/login$#',  'AuthController', 'login'],
@@ -81,4 +85,4 @@ foreach ($routes as [$routeMethod, $pattern, $controllerName, $action]) {
 
 http_response_code(404);
 header('Content-Type: application/json; charset=utf-8');
-echo json_encode(['error' => 'Not Found'], JSON_UNESCAPED_UNICODE);
+echo json_encode(['message' => 'Not Found'], JSON_UNESCAPED_UNICODE);
