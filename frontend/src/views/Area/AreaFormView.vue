@@ -12,15 +12,9 @@
       </div>
 
       <div class="form-field">
-        <label for="prefecture">都道府県</label>
-        <input id="prefecture" v-model="form.prefecture" type="text" required maxlength="50" />
-        <p v-if="errors.prefecture" class="form-field__error">{{ errors.prefecture }}</p>
-      </div>
-
-      <div class="form-field">
-        <label for="city">市区町村</label>
-        <input id="city" v-model="form.city" type="text" required maxlength="100" />
-        <p v-if="errors.city" class="form-field__error">{{ errors.city }}</p>
+        <label for="address">住所（任意）</label>
+        <input id="address" v-model="form.address" type="text" maxlength="255" />
+        <p v-if="errors.address" class="form-field__error">{{ errors.address }}</p>
       </div>
 
       <div class="form-field form-field--row">
@@ -51,8 +45,32 @@
       </div>
 
       <div class="form-field">
-        <label for="features">特色</label>
-        <textarea id="features" v-model="form.features" required rows="5"></textarea>
+        <label>特色タグ（複数選択可・任意）</label>
+        <div class="tag-selector">
+          <label v-for="tag in availableTags" :key="tag.name" class="tag-selector__option">
+            <input type="checkbox" :value="tag.name" v-model="form.tags" />
+            {{ tag.name }}
+          </label>
+          <p v-if="availableTags.length === 0" class="tag-selector__empty">
+            まだタグが登録されていません。下記から新しく追加してください
+          </p>
+        </div>
+        <div class="tag-selector__new">
+          <input
+            v-model="newTagName"
+            type="text"
+            placeholder="新しいタグ名（例：温泉）"
+            maxlength="50"
+            @keydown.enter.prevent="addNewTag"
+          />
+          <button type="button" @click="addNewTag">＋ タグを追加</button>
+        </div>
+        <p v-if="errors.tags" class="form-field__error">{{ errors.tags }}</p>
+      </div>
+
+      <div class="form-field">
+        <label for="features">特色（自由記述・任意）</label>
+        <textarea id="features" v-model="form.features" rows="5"></textarea>
         <p v-if="errors.features" class="form-field__error">{{ errors.features }}</p>
       </div>
 
@@ -71,7 +89,7 @@
 <script setup>
 import { reactive, ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { fetchArea, createArea, updateArea } from '@/api/area';
+import { fetchArea, createArea, updateArea, fetchFeatureTags } from '@/api/area';
 
 const route = useRoute();
 const router = useRouter();
@@ -80,17 +98,44 @@ const isEditMode = computed(() => route.params.id !== undefined);
 
 const form = reactive({
   name: '',
-  prefecture: '',
-  city: '',
+  features: '',
   latitude: '',
   longitude: '',
-  features: '',
+  address: '',
+  tags: [], // 選択中のタグ名の配列
 });
+
+const availableTags = ref([]);
+const newTagName = ref('');
 
 const errors = ref({});
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const submitError = ref('');
+
+async function loadAvailableTags() {
+  try {
+    availableTags.value = await fetchFeatureTags();
+  } catch (error) {
+    // タグ一覧の取得に失敗しても、新規タグの自由入力は引き続き可能にしておく
+    availableTags.value = [];
+  }
+}
+
+function addNewTag() {
+  const name = newTagName.value.trim();
+  newTagName.value = '';
+
+  if (name === '' || form.tags.includes(name)) {
+    return;
+  }
+
+  form.tags.push(name);
+
+  if (!availableTags.value.some((tag) => tag.name === name)) {
+    availableTags.value.push({ id: null, name });
+  }
+}
 
 async function loadArea() {
   isLoading.value = true;
@@ -98,11 +143,11 @@ async function loadArea() {
   try {
     const area = await fetchArea(route.params.id);
     form.name = area.name;
-    form.prefecture = area.prefecture;
-    form.city = area.city;
+    form.features = area.features ?? '';
     form.latitude = area.latitude ?? '';
     form.longitude = area.longitude ?? '';
-    form.features = area.features;
+    form.address = area.address ?? '';
+    form.tags = area.tags.map((tag) => tag.name);
   } catch (error) {
     submitError.value = '地域データの取得に失敗しました';
   } finally {
@@ -117,11 +162,11 @@ async function handleSubmit() {
 
   const payload = {
     name: form.name,
-    prefecture: form.prefecture,
-    city: form.city,
+    features: form.features === '' ? null : form.features,
     latitude: form.latitude === '' ? null : form.latitude,
     longitude: form.longitude === '' ? null : form.longitude,
-    features: form.features,
+    address: form.address === '' ? null : form.address,
+    tags: form.tags,
   };
 
   try {
@@ -132,7 +177,11 @@ async function handleSubmit() {
     }
     router.push('/areas');
   } catch (error) {
-    if (error.status === 422 && error.errors) {
+    if (error.status === 401) {
+      submitError.value = 'ログインが必要です';
+    } else if (error.status === 403) {
+      submitError.value = 'この地域を編集する権限がありません';
+    } else if (error.status === 422 && error.errors) {
       errors.value = error.errors;
     } else {
       submitError.value = '保存に失敗しました';
@@ -143,6 +192,7 @@ async function handleSubmit() {
 }
 
 onMounted(() => {
+  loadAvailableTags();
   if (isEditMode.value) {
     loadArea();
   }
@@ -166,6 +216,31 @@ onMounted(() => {
   color: #c0392b;
   font-size: 0.85rem;
   margin: 0;
+}
+
+.tag-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tag-selector__option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: normal;
+}
+
+.tag-selector__empty {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.tag-selector__new {
+  display: flex;
+  gap: 8px;
 }
 
 .area-form-view__error {
