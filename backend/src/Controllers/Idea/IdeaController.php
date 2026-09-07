@@ -1,18 +1,29 @@
 <?php
 // アイデア入力・アイデア閲覧に対応するコントローラー
+// レスポンス／エラーの形はfrontend側（src/api/client.js）の実装に合わせている
+// （成功時はdataをそのまま返す、エラー時は{ message: string }を返す）
 
 require_once __DIR__ . '/../../Models/Idea.php';
 
 class IdeaController
 {
-    // GET /api/ideas … アイデア一覧（アイデア閲覧）
+    private const MAX_TITLE_LENGTH = 60;
+    private const MAX_CONTENT_LENGTH = 1000;
+    private const MAX_REASON_LENGTH = 1000;
+
+    // GET /api/ideas?area_name=...&status=... … アイデア一覧（アイデア閲覧）
     public function index(): void
     {
         try {
-            $ideas = Idea::all();
-            self::jsonResponse(200, ['data' => $ideas]);
+            $filters = [
+                'area_name' => $_GET['area_name'] ?? null,
+                'status'    => $_GET['status'] ?? null,
+            ];
+
+            $ideas = Idea::all($filters);
+            self::jsonResponse(200, $ideas);
         } catch (Throwable $e) {
-            self::jsonResponse(500, ['error' => $e->getMessage()]);
+            self::jsonResponse(500, ['message' => $e->getMessage()]);
         }
     }
 
@@ -23,13 +34,13 @@ class IdeaController
             $idea = Idea::find($id);
 
             if ($idea === null) {
-                self::jsonResponse(404, ['error' => '指定されたアイデアが見つかりません']);
+                self::jsonResponse(404, ['message' => '指定されたアイデアが見つかりません']);
                 return;
             }
 
-            self::jsonResponse(200, ['data' => $idea]);
+            self::jsonResponse(200, $idea);
         } catch (Throwable $e) {
-            self::jsonResponse(500, ['error' => $e->getMessage()]);
+            self::jsonResponse(500, ['message' => $e->getMessage()]);
         }
     }
 
@@ -41,45 +52,72 @@ class IdeaController
         $errors = self::validate($input);
 
         if (!empty($errors)) {
-            self::jsonResponse(422, ['errors' => $errors]);
+            self::jsonResponse(422, [
+                'message' => $errors[0],
+                'errors'  => $errors,
+            ]);
             return;
         }
 
         try {
-            $id = Idea::create($input);
-            self::jsonResponse(201, ['data' => ['id' => $id]]);
+            // TODO(SECURITY): user_idはリクエストから受け取らない。frontendも送ってこない。
+            // ログイン機能実装後は認証トークン（セッション等）から取得してここに渡すこと。
+            $id = Idea::create([
+                'area_name' => trim($input['area_name']),
+                'title'     => trim($input['title']),
+                'status'    => $input['status'],
+                'content'   => trim($input['content']),
+                'reason'    => trim($input['reason']),
+                'user_id'   => null,
+            ]);
+
+            $idea = Idea::find($id);
+            self::jsonResponse(201, $idea);
         } catch (Throwable $e) {
-            self::jsonResponse(500, ['error' => $e->getMessage()]);
+            self::jsonResponse(500, ['message' => $e->getMessage()]);
         }
     }
 
+    // フロントのバリデーションだけに頼らず、バックエンド側でも入力値を検証する（Zero Trust）
     private static function validate(array $input): array
     {
         $errors = [];
 
-        // TODO(SECURITY): user_id はリクエストからそのまま信用せず、ログイン機能実装後は
-        // 認証トークン（セッション/JWTなど）から取得するように修正する（AGENTS.md 4節）
-        // 現時点ではログイン機能が未実装のため、暫定的にリクエストから受け取っている
-        if (empty($input['area_id'])) {
-            $errors[] = 'area_id は必須です';
+        $title = trim((string) ($input['title'] ?? ''));
+        if ($title === '') {
+            $errors[] = 'タイトルを入力してください';
+        } elseif (mb_strlen($title) > self::MAX_TITLE_LENGTH) {
+            $errors[] = 'タイトルは' . self::MAX_TITLE_LENGTH . '文字以内で入力してください';
         }
 
-        if (empty($input['user_id'])) {
-            $errors[] = 'user_id は必須です';
+        $areaName = trim((string) ($input['area_name'] ?? ''));
+        if ($areaName === '') {
+            $errors[] = '地域名を入力してください';
         }
 
-        if (empty($input['title'])) {
-            $errors[] = 'title は必須です';
+        $status = $input['status'] ?? '';
+        if (!in_array($status, ['success', 'failure'], true)) {
+            $errors[] = '結果はsuccess（成功）かfailure（失敗）のいずれかを指定してください';
         }
 
-        if (empty($input['summary'])) {
-            $errors[] = 'summary は必須です';
+        $content = trim((string) ($input['content'] ?? ''));
+        if ($content === '') {
+            $errors[] = 'アイデアの内容を入力してください';
+        } elseif (mb_strlen($content) > self::MAX_CONTENT_LENGTH) {
+            $errors[] = 'アイデアの内容は' . self::MAX_CONTENT_LENGTH . '文字以内で入力してください';
+        }
+
+        $reason = trim((string) ($input['reason'] ?? ''));
+        if ($reason === '') {
+            $errors[] = '理由を入力してください';
+        } elseif (mb_strlen($reason) > self::MAX_REASON_LENGTH) {
+            $errors[] = '理由は' . self::MAX_REASON_LENGTH . '文字以内で入力してください';
         }
 
         return $errors;
     }
 
-    private static function jsonResponse(int $status, array $body): void
+    private static function jsonResponse(int $status, $body): void
     {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');

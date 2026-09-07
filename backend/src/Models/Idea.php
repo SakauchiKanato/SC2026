@@ -1,32 +1,45 @@
 <?php
 // アイデア（ideasテーブル）に対するDB操作をまとめたクラス
+// フィールド構成はfrontend側のAPI仕様（area_name / status / content / reason）に合わせている
 
 require_once __DIR__ . '/../Core/Database.php';
 
 class Idea
 {
     // アイデア一覧を取得する（アイデア閲覧：一覧画面用）
-    public static function all(): array
+    // $filters: ['area_name' => string, 'status' => 'success'|'failure']
+    public static function all(array $filters = []): array
     {
         $conn = Database::getConnection();
 
+        $conditions = [];
+        $params = [];
+        $index = 1;
+
+        if (!empty($filters['area_name'])) {
+            $conditions[] = 'area_name ILIKE $' . $index;
+            $params[] = '%' . $filters['area_name'] . '%';
+            $index++;
+        }
+
+        if (!empty($filters['status'])) {
+            $conditions[] = 'status = $' . $index;
+            $params[] = $filters['status'];
+            $index++;
+        }
+
+        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
         $sql = "
-            SELECT
-                ideas.id,
-                ideas.title,
-                ideas.summary,
-                ideas.business_plan,
-                ideas.result_status,
-                ideas.result_note,
-                ideas.created_at,
-                areas.id   AS area_id,
-                areas.name AS area_name
+            SELECT id, area_name, title, status, content, reason, created_at
             FROM ideas
-            JOIN areas ON areas.id = ideas.area_id
-            ORDER BY ideas.created_at DESC
+            $where
+            ORDER BY created_at DESC
         ";
 
-        $result = pg_query($conn, $sql);
+        $result = $params
+            ? pg_query_params($conn, $sql, $params)
+            : pg_query($conn, $sql);
 
         if ($result === false) {
             throw new RuntimeException('アイデア一覧の取得に失敗しました: ' . pg_last_error($conn));
@@ -41,23 +54,9 @@ class Idea
         $conn = Database::getConnection();
 
         $sql = "
-            SELECT
-                ideas.id,
-                ideas.title,
-                ideas.summary,
-                ideas.business_plan,
-                ideas.result_status,
-                ideas.result_note,
-                ideas.created_at,
-                ideas.updated_at,
-                areas.id   AS area_id,
-                areas.name AS area_name,
-                users.id   AS user_id,
-                users.name AS user_name
+            SELECT id, area_name, title, status, content, reason, created_at, updated_at
             FROM ideas
-            JOIN areas ON areas.id = ideas.area_id
-            JOIN users ON users.id = ideas.user_id
-            WHERE ideas.id = $1
+            WHERE id = $1
         ";
 
         $result = pg_query_params($conn, $sql, [$id]);
@@ -77,19 +76,18 @@ class Idea
         $conn = Database::getConnection();
 
         $sql = "
-            INSERT INTO ideas (area_id, user_id, title, summary, business_plan, result_status, result_note)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO ideas (area_name, title, status, content, reason, user_id)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING id
         ";
 
         $params = [
-            $data['area_id'],
-            $data['user_id'],
+            $data['area_name'],
             $data['title'],
-            $data['summary'],
-            $data['business_plan'] ?? null,
-            $data['result_status'] ?? 'ongoing',
-            $data['result_note'] ?? null,
+            $data['status'],
+            $data['content'],
+            $data['reason'],
+            $data['user_id'] ?? null, // TODO(SECURITY): ログイン機能実装後はセッションから取得したuser_idを渡す
         ];
 
         $result = pg_query_params($conn, $sql, $params);
