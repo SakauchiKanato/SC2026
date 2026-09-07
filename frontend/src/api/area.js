@@ -27,7 +27,7 @@ async function handleResponse(response) {
 
 // 新規登録・更新・削除はログイン必須のため、Authorizationヘッダーを付与する。
 // トークンはstore/auth.jsがapi/client.js経由で保持しているものを共有する
-// （ログインしていない場合はundefinedのままなの��、backend側でAuthMiddlewareが401を返す）。
+// （ログインしていない場合はundefinedのままなので、backend側でAuthMiddlewareが401を返す）。
 function authHeaders() {
   const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -75,7 +75,7 @@ export async function deleteArea(id) {
 }
 
 /**
- * 特色タグの選択肢一覧を取得する（登録・編集フォーユのプルダウン用）
+ * 特色タグの選択肢一覧を取得する（登録・編集フォームのプルダウン用）
  * 誰かが新しいタグを登録すると、以後このAPIの結果に含まれるようになる
  */
 export async function fetchFeatureTags() {
