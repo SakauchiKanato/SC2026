@@ -9,6 +9,8 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../store/auth'
 import { fetchAreas } from '../api/area'
 import AreaCard from '../components/Area/AreaCard.vue'
+import MachitaneSprouts from '../components/Layout/MachitaneSprouts.vue'
+import MachitaneDoubleLeafCta from '../components/Layout/MachitaneDoubleLeafCta.vue'
 
 const { user, isAuthenticated } = useAuthStore()
 
@@ -37,20 +39,15 @@ onMounted(() => {
 
 <template>
   <section v-if="!isAuthenticated" class="mt-landing">
-    <p class="mt-landing__tagline">
-      地域の特色・地理情報と、そこで生まれたアイデアの成功／失敗の記録を蓄積し、<br />
-      似た土地で挑戦する人の道しるべになることを目指すアプリです。
-    </p>
-
-    <div class="mt-leaf-row">
-      <RouterLink :to="{ name: 'login-proposer' }" class="mt-leaf mt-leaf--left">
-        発案者の方<br />はこちら
-      </RouterLink>
-      <RouterLink :to="{ name: 'login-company' }" class="mt-leaf mt-leaf--right">
-        企業・自治体<br />の方はこちら
-      </RouterLink>
+    <div class="mt-landing__hero">
+      <MachitaneSprouts class="mt-landing__sprouts" />
+      <p class="mt-landing__tagline">
+        地域の特色・地理情報と、そこで生まれたアイデアの成功／失敗の記録を蓄積し、<br />
+        似た土地で挑戦する人の道しるべになることを目指すアプリです。
+      </p>
     </div>
-    <div class="mt-leaf-stem"></div>
+
+    <MachitaneDoubleLeafCta class="mt-landing__cta" />
   </section>
 
   <section v-else class="mt-page">
