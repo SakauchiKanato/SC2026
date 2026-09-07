@@ -7,6 +7,7 @@ import {
 
 /**
  * アイデア機能の状態管理。
+ * アイデアは地域(areaId)に紐づくため、一覧取得・登録はどちらもareaIdを受け取る。
  *
  * NOTE: Piniaの導入有無がプロジェクトとして未確定のため、
  *       ライブラリを勝手に追加せずComposition APIのreactiveのみで実装している。
@@ -21,11 +22,11 @@ const state = reactive({
 })
 
 export function useIdeaStore() {
-  async function loadIdeas(filters = {}) {
+  async function loadIdeas(areaId, filters = {}) {
     state.isLoading = true
     state.errorMessage = ''
     try {
-      state.ideas = await fetchIdeasApi(filters)
+      state.ideas = await fetchIdeasApi(areaId, filters)
     } catch (error) {
       state.errorMessage = error.message
     } finally {
@@ -45,9 +46,9 @@ export function useIdeaStore() {
     }
   }
 
-  async function registerIdea(idea) {
+  async function registerIdea(areaId, idea) {
     state.errorMessage = ''
-    const created = await createIdeaApi(idea)
+    const created = await createIdeaApi(areaId, idea)
     state.ideas = [created, ...state.ideas]
     return created
   }

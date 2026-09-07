@@ -1,6 +1,15 @@
 <script setup>
 import { reactive } from 'vue'
 
+const props = defineProps({
+  // 'user'（発案者ログイン） | 'company'（企業・自治体ログイン）
+  // 呼び出し元（LoginView）がどちらのログインページかを渡す
+  expectedRole: {
+    type: String,
+    default: null,
+  },
+})
+
 const emit = defineEmits(['submit'])
 
 const form = reactive({
@@ -27,6 +36,7 @@ function handleSubmit() {
   emit('submit', {
     email: form.email.trim(),
     password: form.password,
+    role: props.expectedRole,
   })
 }
 </script>

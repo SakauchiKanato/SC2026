@@ -1,16 +1,44 @@
 /*
- * アイデア機能（登録・閲覧）で共有するデザイントークンと共通クラス。
- * 地域活性化＝土地に根ざす、というテーマから、深緑（主色）と土色に近い黄土色（差し色）を採用。
+ * 「街タネ」デザインシステム
+ * PDFデザイン（クリーム背景・緑のカード・葉っぱ型ボタン）に合わせたトークンと共通クラス。
+ * 既存クラス名（idea-button, idea-banner等）は他画面との互換のため残しつつ、
+ * mt- プレフィックスで新しいデザイン用のクラスを追加している。
  */
 :root {
-  --idea-color-bg: #fbfaf7;
+  /* ベース */
+  --mt-color-bg: #faf6ec;
+  --mt-color-surface: #ffffff;
+  --mt-color-text: #262620;
+  --mt-color-text-muted: #6f6b5c;
+  --mt-color-border: #e4ddc9;
+
+  /* アクセント */
+  --mt-color-green: #8bc34a;
+  --mt-color-green-dark: #6fa332;
+  --mt-color-green-pale: #dff0d8;
+  --mt-color-yellow-pale: #fbf6cf;
+  --mt-color-blue-pale: #bfe6f5;
+  --mt-color-blue-pale-text: #1c3a4a;
+  --mt-color-tan: #ddd4c2;
+  --mt-color-tan-dark: #cabfa8;
+  --mt-color-achieved: #d9705a;
+  --mt-color-not-achieved: #4f7fb0;
+  --mt-color-soil: #8a6b4f;
+  --mt-color-outline: #2f3d22;
+
+  --mt-radius-card: 18px;
+  --mt-radius-pill: 999px;
+  --mt-shadow-card: 0 2px 6px rgba(60, 50, 20, 0.08);
+
+  /* 既存トークン（互換維持） */
+  --idea-color-bg: var(--mt-color-bg);
   --idea-color-surface: #ffffff;
   --idea-color-primary: #1f3d2b;
   --idea-color-primary-dark: #142a1d;
   --idea-color-accent: #c98a2c;
-  --idea-color-text: #1a2233;
-  --idea-color-text-muted: #5b6570;
-  --idea-color-border: #ddd8cc;
+  --idea-color-text: var(--mt-color-text);
+  --idea-color-text-muted: var(--mt-color-text-muted);
+  --idea-color-border: var(--mt-color-border);
   --idea-color-danger: #b3261e;
   --idea-color-danger-bg: #f7e9e7;
   --idea-color-success-bg: #e4efe6;
@@ -18,10 +46,15 @@
   --idea-color-failure-bg: #f5e9e3;
   --idea-color-failure-text: #8a4b1f;
 
-  --idea-radius: 6px;
+  --idea-radius: 10px;
   --idea-spacing-sm: 8px;
   --idea-spacing-md: 16px;
   --idea-spacing-lg: 32px;
+}
+
+body {
+  background: var(--mt-color-bg);
+  color: var(--mt-color-text);
 }
 
 .idea-page-header {
@@ -112,4 +145,430 @@
   padding: var(--idea-spacing-lg) 0;
   color: var(--idea-color-text-muted);
   text-align: center;
+}
+
+/* ==================== 街タネ共通コンポーネント ==================== */
+
+/* ヘッダー */
+.mt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--idea-spacing-md);
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--mt-color-border);
+  background: var(--mt-color-bg);
+  flex-wrap: wrap;
+}
+
+.mt-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--mt-color-text);
+}
+
+.mt-logo__icon {
+  width: 40px;
+  height: 26px;
+  display: block;
+}
+
+.mt-logo__text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.mt-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ピルボタン共通 */
+.mt-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 22px;
+  border-radius: var(--mt-radius-pill);
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+
+.mt-pill:hover {
+  filter: brightness(0.96);
+}
+
+.mt-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mt-pill--blue {
+  background: var(--mt-color-blue-pale);
+  color: var(--mt-color-blue-pale-text);
+}
+
+.mt-pill--tan {
+  background: var(--mt-color-tan);
+  color: var(--mt-color-text);
+}
+
+.mt-pill--large {
+  padding: 14px 32px;
+  font-size: 1.05rem;
+}
+
+/* 本文レイアウト */
+.mt-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--idea-spacing-lg) var(--idea-spacing-md);
+}
+
+.mt-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--idea-spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--idea-spacing-lg);
+}
+
+.mt-page__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* 地域カード（緑） */
+.mt-area-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--idea-spacing-md);
+}
+
+.mt-area-card {
+  background: var(--mt-color-green);
+  border-radius: var(--mt-radius-card);
+  padding: 20px 22px;
+  color: #16240c;
+  box-shadow: var(--mt-shadow-card);
+}
+
+.mt-area-card__name {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.mt-area-card__meta {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+}
+
+.mt-area-card__links {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.mt-area-card__links a,
+.mt-area-card__meta a {
+  color: #16240c;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* アイデアカード */
+.mt-idea-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--idea-spacing-md);
+}
+
+.mt-idea-card {
+  border-radius: var(--mt-radius-card);
+  padding: 20px 22px;
+  box-shadow: var(--mt-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mt-idea-card--new {
+  background: var(--mt-color-yellow-pale);
+}
+
+.mt-idea-card--past {
+  background: var(--mt-color-green-pale);
+}
+
+.mt-idea-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mt-idea-card__label {
+  font-size: 0.85rem;
+  color: var(--mt-color-text-muted);
+}
+
+.mt-idea-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.mt-idea-card__excerpt {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--mt-color-text);
+  white-space: pre-wrap;
+}
+
+.mt-idea-card__footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mt-idea-card__footer a {
+  color: var(--mt-color-text);
+  font-weight: 700;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.mt-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 18px;
+  border-radius: var(--mt-radius-pill);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.mt-status-pill--achieved {
+  background: var(--mt-color-achieved);
+}
+
+.mt-status-pill--not-achieved {
+  background: var(--mt-color-not-achieved);
+}
+
+/* 情報ボックス（地域の特色） */
+.mt-box {
+  border: 1px solid var(--mt-color-text);
+  border-radius: var(--mt-radius-card);
+  padding: 18px 20px;
+  background: var(--mt-color-surface);
+}
+
+.mt-box--placeholder {
+  color: var(--mt-color-text-muted);
+  text-align: center;
+}
+
+.mt-box-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--idea-spacing-md);
+}
+
+@media (max-width: 640px) {
+  .mt-box-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mt-box textarea {
+  width: 100%;
+  min-height: 140px;
+  border: none;
+  resize: vertical;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+.mt-box textarea:focus {
+  outline: 2px solid var(--mt-color-green);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.mt-section-label {
+  font-weight: 700;
+  margin: var(--idea-spacing-lg) 0 var(--idea-spacing-sm);
+}
+
+/* ランディングページ */
+.mt-landing {
+  text-align: center;
+  padding: 24px var(--idea-spacing-md) 40px;
+}
+
+.mt-landing__hero {
+  position: relative;
+  max-width: 960px;
+  margin: 0 auto;
+  padding-top: 92px;
+}
+
+/* 背景に散らした小さな双葉（発芽の様子の装飾） */
+.mt-sprout-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 96px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mt-sprout-bg__leaf {
+  fill: var(--mt-color-green-pale);
+  stroke: var(--mt-color-outline);
+  stroke-width: 1.5;
+}
+
+.mt-sprout-bg__stem {
+  stroke: var(--mt-color-green-dark);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.mt-sprout-bg__mound {
+  fill: var(--mt-color-soil);
+  opacity: 0.55;
+}
+
+.mt-landing__tagline {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 2;
+  background-image: linear-gradient(var(--mt-color-blue-pale), var(--mt-color-blue-pale));
+  background-repeat: no-repeat;
+  background-size: 100% 0.55em;
+  background-position: 0 65%;
+  display: inline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* 中央の大きな双葉型CTA（1枚のSVGで発案者／企業・自治体の両リンクを表現） */
+.mt-landing__cta {
+  display: block;
+  width: min(600px, 92vw);
+  height: auto;
+  margin: 0 auto;
+}
+
+.mt-leaf-graphic__lobe {
+  fill: var(--mt-color-green);
+  stroke: var(--mt-color-outline);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  transition: filter 0.15s ease;
+}
+
+.mt-leaf-graphic__vein {
+  fill: none;
+  stroke: var(--mt-color-green-dark);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.mt-leaf-graphic__stem {
+  stroke: var(--mt-color-green-dark);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.mt-leaf-graphic__mound {
+  fill: var(--mt-color-soil);
+}
+
+.mt-leaf-graphic__slot {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mt-leaf-graphic__link {
+  color: #16240c;
+  text-decoration: none;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.4;
+  padding: 4px;
+}
+
+.mt-leaf-graphic__link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .mt-landing__hero {
+    padding-top: 72px;
+  }
+  .mt-leaf-graphic__link {
+    font-size: 1rem;
+  }
+}
+
+/* フォーム（地域登録など） */
+.mt-form-field {
+  margin-bottom: var(--idea-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mt-form-field label {
+  font-weight: 700;
+}
+
+.mt-form-field input[type='text'],
+.mt-form-field textarea {
+  border: 1px solid var(--mt-color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: inherit;
+  background: var(--mt-color-surface);
+}
+
+.mt-form-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.mt-form-field__error {
+  color: var(--idea-color-danger);
+  font-size: 0.85rem;
+  margin: 0;
 }
