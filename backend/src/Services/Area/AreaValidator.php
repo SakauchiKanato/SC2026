@@ -31,6 +31,10 @@ if (!class_exists('AreaValidationException')) {
  *
  * 意図的にDBに依存しない純粋なロジックとして切り出している。
  * これにより Core/Database.php の実装を待たずに単体テストできる。
+ *
+ * NOTE: areasテーブルの実際のカラム構成（name, features, latitude,
+ * longitude, address）に合わせている。user_idはクライアント入力ではなく
+ * 認証情報（セッション）から取得するため、ここではバリデーション対象外。
  */
 class AreaValidator
 {
@@ -41,8 +45,7 @@ class AreaValidator
     private const LONGITUDE_MAX = 180;
 
     private const MAX_NAME_LENGTH = 255;
-    private const MAX_PREFECTURE_LENGTH = 50;
-    private const MAX_CITY_LENGTH = 100;
+    private const MAX_ADDRESS_LENGTH = 255;
     private const MAX_TAG_NAME_LENGTH = 50;
     private const MAX_TAG_COUNT = 10;
 
@@ -64,23 +67,14 @@ class AreaValidator
             $errors['name'] = '地域名は' . self::MAX_NAME_LENGTH . '文字以内で入力してください';
         }
 
-        $prefecture = trim((string)($input['prefecture'] ?? ''));
-        if ($prefecture === '') {
-            $errors['prefecture'] = '都道府県は必須です';
-        } elseif (mb_strlen($prefecture) > self::MAX_PREFECTURE_LENGTH) {
-            $errors['prefecture'] = '都道府県は' . self::MAX_PREFECTURE_LENGTH . '文字以内で入力してください';
-        }
+        // features・address はDB上nullable（任意項目）
+        $featuresRaw = trim((string)($input['features'] ?? ''));
+        $features = $featuresRaw === '' ? null : $featuresRaw;
 
-        $city = trim((string)($input['city'] ?? ''));
-        if ($city === '') {
-            $errors['city'] = '市区町村は必須です';
-        } elseif (mb_strlen($city) > self::MAX_CITY_LENGTH) {
-            $errors['city'] = '市区町村は' . self::MAX_CITY_LENGTH . '文字以内で入力してください';
-        }
-
-        $description = trim((string)($input['description'] ?? ''));
-        if ($description === '') {
-            $errors['description'] = '特色の説明は必須です';
+        $addressRaw = trim((string)($input['address'] ?? ''));
+        $address = $addressRaw === '' ? null : $addressRaw;
+        if ($address !== null && mb_strlen($address) > self::MAX_ADDRESS_LENGTH) {
+            $errors['address'] = '住所は' . self::MAX_ADDRESS_LENGTH . '文字以内で入力してください';
         }
 
         $tagNames = $this->validateTags($input['tags'] ?? [], $errors);
@@ -115,11 +109,10 @@ class AreaValidator
 
         return [
             'name' => $name,
-            'prefecture' => $prefecture,
-            'city' => $city,
+            'features' => $features,
             'latitude' => $latitude,
             'longitude' => $longitude,
-            'description' => $description,
+            'address' => $address,
             'tags' => $tagNames,
         ];
     }

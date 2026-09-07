@@ -4,17 +4,21 @@
  * Area モデル
  *
  * 地域（Area）の特色・地理情報を扱うデータアクセスクラス。
- * Areaは所有者(user)を持たない独立したマスターデータであり、
- * 誰でも参照・登録・編集・削除が可能な想定。
+ * areasテーブル本体は初期スキーマ（他メンバー実装）で作成済みのため、
+ * ここでは既存のカラム構成（user_id, name, features, latitude, longitude,
+ * address, created_at, updated_at）に合わせて実装している。
  *
- * 特色タグ(feature_tags)との紐づけ(area_feature_tags)もこのクラスで扱う。
+ * Areaはuser_idで登録者に紐づく（所有者あり）。特色タグ(feature_tags)との
+ * 紐づけ(area_feature_tags)は、featuresカラムに上乗せする追加機能として
+ * このクラスで扱う。
  *
  * NOTE: backend/src/Core/Database.php はまだ存在しない（他メンバー実装予定）。
- *       Database::getConnection(): \PDO を提供するクラスである想定でこのモデルを実装している。
  *       PDOを直接コンストラクタで受け取った場合はCore/Database.phpを読み込まないため、
  *       Core/Database.php完成前でもテストからは動かせる。
+ *
+ * NOTE: updated_atはDBトリガー(set_updated_at_areas)で自動更新されるため、
+ *       このクラスのUPDATE文では明示的に更新していない。
  */
-
 class Area
 {
     private const TABLE = 'areas';
@@ -42,7 +46,7 @@ class Area
     public function all(): array
     {
         $stmt = $this->db->query(
-            'SELECT id, name, prefecture, city, latitude, longitude, description, created_at, updated_at
+            'SELECT id, user_id, name, features, latitude, longitude, address, created_at, updated_at
              FROM ' . self::TABLE . '
              ORDER BY created_at DESC'
         );
@@ -70,7 +74,7 @@ class Area
     public function find(int $id): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT id, name, prefecture, city, latitude, longitude, description, created_at, updated_at
+            'SELECT id, user_id, name, features, latitude, longitude, address, created_at, updated_at
              FROM ' . self::TABLE . '
              WHERE id = :id'
         );
@@ -91,7 +95,7 @@ class Area
     /**
      * 新規登録（タグの紐づけは含まない。呼び出し側でattachTagsを呼ぶこと）
      *
-     * @param array<string, mixed> $data バリデーション済みのデータ
+     * @param array<string, mixed> $data バリデーション済みのデータ（user_idを含む）
      * @return int 作成されたAreaのID
      */
     public function create(array $data): int
@@ -100,18 +104,18 @@ class Area
         //       INSERT文にRETURNING idを付けて直接IDを取得している
         $stmt = $this->db->prepare(
             'INSERT INTO ' . self::TABLE . '
-             (name, prefecture, city, latitude, longitude, description, created_at, updated_at)
-             VALUES (:name, :prefecture, :city, :latitude, :longitude, :description, NOW(), NOW())
+             (user_id, name, features, latitude, longitude, address, created_at, updated_at)
+             VALUES (:user_id, :name, :features, :latitude, :longitude, :address, NOW(), NOW())
              RETURNING id'
         );
 
         $stmt->execute([
+            'user_id' => $data['user_id'],
             'name' => $data['name'],
-            'prefecture' => $data['prefecture'],
-            'city' => $data['city'],
+            'features' => $data['features'] ?? null,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
-            'description' => $data['description'],
+            'address' => $data['address'] ?? null,
         ]);
 
         return (int) $stmt->fetchColumn();
@@ -119,6 +123,7 @@ class Area
 
     /**
      * 更新（タグの紐づけは含まない。呼び出し側でattachTagsを呼ぶこと）
+     * user_id（所有者）は更新しない
      *
      * @param array<string, mixed> $data バリデーション済みのデータ
      */
@@ -127,23 +132,20 @@ class Area
         $stmt = $this->db->prepare(
             'UPDATE ' . self::TABLE . '
              SET name = :name,
-                 prefecture = :prefecture,
-                 city = :city,
+                 features = :features,
                  latitude = :latitude,
                  longitude = :longitude,
-                 description = :description,
-                 updated_at = NOW()
+                 address = :address
              WHERE id = :id'
         );
 
         return $stmt->execute([
             'id' => $id,
             'name' => $data['name'],
-            'prefecture' => $data['prefecture'],
-            'city' => $data['city'],
+            'features' => $data['features'] ?? null,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
-            'description' => $data['description'],
+            'address' => $data['address'] ?? null,
         ]);
     }
 

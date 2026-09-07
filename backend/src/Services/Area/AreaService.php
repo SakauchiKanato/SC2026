@@ -8,6 +8,8 @@ require_once __DIR__ . '/../../Models/FeatureTag.php';
  * Area サービス
  *
  * ビジネスロジックを担当する。バリデーションは AreaValidator に委譲する。
+ * Areaはuser_idで登録者に紐づくため、更新・削除は登録者本人のみに制限する。
+ *
  * 特色タグの登録・紐づけはareasテーブルとfeature_tags/area_feature_tagsテーブルの
  * 複数テーブルにまたがる更新になるため、トランザクションでまとめて整合性を保つ
  * （AGENTS.md 5章: データ整合性が必要な複数の更新処理はトランザクションでまとめる）。
@@ -78,13 +80,15 @@ class AreaService
     }
 
     /**
+     * @param int $userId 登録者（認証済みユーザー）のID
      * @param array<string, mixed> $input
      * @return array<string, mixed>
      * @throws AreaValidationException
      */
-    public function create(array $input): array
+    public function create(int $userId, array $input): array
     {
         $data = $this->validator->validate($input);
+        $data['user_id'] = $userId;
 
         $this->db->beginTransaction();
         try {
@@ -101,15 +105,14 @@ class AreaService
     }
 
     /**
+     * @param int $userId 操作しようとしている認証済みユーザーのID
      * @param array<string, mixed> $input
      * @return array<string, mixed>
      * @throws AreaValidationException
      */
-    public function update(int $id, array $input): array
+    public function update(int $id, int $userId, array $input): array
     {
-        if (!$this->areaModel->exists($id)) {
-            throw new \RuntimeException('Area not found', 404);
-        }
+        $this->assertOwnedByUser($id, $userId);
 
         $data = $this->validator->validate($input);
 
@@ -127,13 +130,27 @@ class AreaService
         return $this->areaModel->find($id);
     }
 
-    public function delete(int $id): void
+    public function delete(int $id, int $userId): void
     {
-        if (!$this->areaModel->exists($id)) {
+        $this->assertOwnedByUser($id, $userId);
+        $this->areaModel->delete($id);
+    }
+
+    /**
+     * 指定したAreaが存在し、かつuserIdが登録者本人であることを確認する
+     * 存在しなければ404、他人のAreaであれば403相当の例外を投げる
+     */
+    private function assertOwnedByUser(int $areaId, int $userId): void
+    {
+        $area = $this->areaModel->find($areaId);
+
+        if ($area === null) {
             throw new \RuntimeException('Area not found', 404);
         }
 
-        $this->areaModel->delete($id);
+        if ((int) $area['user_id'] !== $userId) {
+            throw new \RuntimeException('この地域を編集・削除する権限がありません', 403);
+        }
     }
 
     /**
