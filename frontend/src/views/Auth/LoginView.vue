@@ -43,7 +43,7 @@ async function handleSubmit(payload) {
       {{ errorMessage }}
     </p>
 
-    <LoginForm @submit="handleSubmit" />
+    <LoginForm :expected-role="isCompany ? 'company' : 'user'" @submit="handleSubmit" />
 
     <p v-if="isLoading" class="idea-loading-indicator">ログイン中です…</p>
 

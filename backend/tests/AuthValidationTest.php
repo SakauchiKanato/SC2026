@@ -26,6 +26,11 @@ function validateLogin(array $input): array
     return callPrivateStatic('AuthController', 'validateLogin', [$input]);
 }
 
+function roleMismatchMessage(string $actualRole): string
+{
+    return callPrivateStatic('AuthController', 'roleMismatchMessage', [$actualRole]);
+}
+
 echo "AuthValidationTest\n";
 
 test('signup: 全項目が正しければエラーなし', function () {
@@ -119,6 +124,38 @@ test('login: emailが無いとエラー', function () {
 test('login: passwordが無いとエラー', function () {
     $errors = validateLogin(['email' => 'taro@example.com']);
     assertContains('password', $errors);
+});
+
+test("login: role='company'を指定してもエラーにならない（ログインページからの申告値）", function () {
+    $errors = validateLogin(['email' => 'taro@example.com', 'password' => 'password123', 'role' => 'company']);
+    assertEmpty($errors);
+});
+
+test("login: role='user'を指定してもエラーにならない", function () {
+    $errors = validateLogin(['email' => 'taro@example.com', 'password' => 'password123', 'role' => 'user']);
+    assertEmpty($errors);
+});
+
+test('login: roleがuser/company以外だとエラー（不正なログインページ申告値）', function () {
+    $errors = validateLogin(['email' => 'taro@example.com', 'password' => 'password123', 'role' => 'admin']);
+    assertContains('role', $errors);
+});
+
+test('login: roleが未指定でもエラーにならない（後方互換）', function () {
+    $errors = validateLogin(['email' => 'taro@example.com', 'password' => 'password123']);
+    assertEmpty($errors);
+});
+
+// --- ロール不一致メッセージ（企業・自治体ログインページで発案者アカウントにログインしようとした場合、その逆） ---
+
+test('roleMismatchMessage: 実際はuser（発案者）のアカウントの場合、発案者ログインへの案内になる', function () {
+    $message = roleMismatchMessage('user');
+    assertContains('発案者', [$message]);
+});
+
+test('roleMismatchMessage: 実際はcompany（企業・自治体）のアカウントの場合、企業・自治体ログインへの案内になる', function () {
+    $message = roleMismatchMessage('company');
+    assertContains('企業・自治体', [$message]);
 });
 
 exit(testSummary());
