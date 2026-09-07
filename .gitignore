@@ -1,6 +1,9 @@
 # DB接続情報（実際のパスワードを含むため管理対象外）
 backend/config/database.local.php
 
+# JWTシークレット（推測されるとトークンを偽造できるため管理対象外）
+backend/config/jwt.local.php
+
 # フロントエンドのビルド成果物・依存パッケージ
 frontend/node_modules/
 frontend/dist/

@@ -1,0 +1,10 @@
+<?php
+// ローカル開発用のJWT設定サンプル。
+// このファイルを同じディレクトリに jwt.local.php としてコピーして使う。
+// jwt.local.php は .gitignore 対象（database.local.php と同じ扱い）。
+
+return [
+    // 本番では必ずランダムな長い文字列に変更すること（推測されるとトークンが偽造できてしまう）
+    'secret'        => 'change-this-to-a-long-random-string-for-local-dev-only',
+    'expirySeconds' => 86400, // 24時間
+];
