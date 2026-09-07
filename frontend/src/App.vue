@@ -11,6 +11,9 @@ const { user, isAuthenticated, logout } = useAuthStore()
       <RouterLink to="/" class="app-header__brand">地域活性化アイデア共有</RouterLink>
 
       <nav class="app-header__nav">
+        <RouterLink to="/ideas" class="app-header__link">アイデアを見る</RouterLink>
+        <RouterLink to="/areas" class="app-header__link">地域一覧</RouterLink>
+
         <template v-if="isAuthenticated">
           <span class="app-header__user">{{ user?.name }} さん</span>
           <button type="button" class="idea-button idea-button--secondary" @click="logout">
@@ -50,6 +53,17 @@ const { user, isAuthenticated, logout } = useAuthStore()
   display: flex;
   align-items: center;
   gap: var(--idea-spacing-sm);
+}
+
+.app-header__link {
+  color: var(--idea-color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-right: var(--idea-spacing-sm);
+}
+
+.app-header__link:hover {
+  text-decoration: underline;
 }
 
 .app-header__user {

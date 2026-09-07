@@ -23,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../src/Controllers/Idea/IdeaController.php';
 require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
+require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
 // TODO: 他の担当者が実装したら以下も追加する
-// require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
 // require_once __DIR__ . '/../src/Controllers/Company/CompanyController.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -59,9 +59,13 @@ $routes = [
     ['POST', '#^/login$#',  'AuthController', 'login'],
     ['GET',  '#^/me$#',     'AuthController', 'me'],
 
-    // TODO: 他の担当者が実装したらここにルートを追加する
-    // ['GET',  '#^/areas$#',    'AreaController', 'index'],
-    // ['POST', '#^/areas$#',    'AreaController', 'store'],
+    ['GET',    '#^/areas$#',        'AreaController', 'index'],
+    ['GET',    '#^/areas/(\d+)$#',  'AreaController', 'show'],
+    ['POST',   '#^/areas$#',        'AreaController', 'store'],
+    ['PUT',    '#^/areas/(\d+)$#',  'AreaController', 'update'],
+    ['DELETE', '#^/areas/(\d+)$#',  'AreaController', 'destroy'],
+
+    ['GET', '#^/feature-tags$#', 'AreaController', 'tags'],
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controllerName, $action]) {

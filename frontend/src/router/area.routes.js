@@ -19,11 +19,15 @@ export default [
     path: '/areas/new',
     name: 'area-new',
     component: () => import('@/views/Area/AreaFormView.vue'),
+    // 地域の登録・編集はログイン必須（UX目的のガードで、真の保護は
+    // バックエンド側のAuthMiddleware::requireUserId()で行っている）
+    meta: { requiresAuth: true },
   },
   {
     path: '/areas/:id/edit',
     name: 'area-edit',
     component: () => import('@/views/Area/AreaFormView.vue'),
     props: true,
+    meta: { requiresAuth: true },
   },
 ];

@@ -15,5 +15,8 @@ export default [
     path: '/ideas/new',
     name: 'idea-new',
     component: () => import('../views/Idea/IdeaFormView.vue'),
+    // アイデアの登録はログイン必須（UX目的のガードで、真の保護は
+    // バックエンド側のAuthMiddleware::requireUserId()で行っている）
+    meta: { requiresAuth: true },
   },
 ]

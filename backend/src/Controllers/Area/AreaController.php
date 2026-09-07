@@ -3,9 +3,7 @@
 /**
  * Area コントローラー
  *
- * NOTE: ルーティング（public/index.php）はまだ存在しない（他メンバー実装予定）。
- *       このコントローラーは以下の呼び出し規約を想定して実装している：
- *
+ * ルーティング（public/index.php）:
  *   GET    /api/areas       -> index()
  *   GET    /api/areas/{id}  -> show($id)
  *   POST   /api/areas       -> store()
@@ -13,15 +11,17 @@
  *   DELETE /api/areas/{id}  -> destroy($id)
  *
  * 各メソッドはレスポンスをJSONで出力し、適切なHTTPステータスコードを設定する。
- * ルーター実装時にこの規約と合わない場合は調整をお願いします。
  *
- * NOTE: 認証済みユーザーIDは $_SESSION['user_id'] に格納されている前提で
- *       実装している（Auth担当の実装が固まり次第、要すり合わせ）。
- *       登録・更新・削除はログイン必須。クライアントから送られてきたuser_idは
- *       信用せず、必ずセッションから取得したIDを使う（Zero Trust, AGENTS.md 4章）。
+ * NOTE(認証方式): 元々は $_SESSION['user_id'] を前提に実装されていたが、
+ *       Auth機能はJWT（Authorization: Bearerヘッダー）で実装されたため、
+ *       AuthMiddleware::requireUserId() に統一した（アプリ全体で認証方式は
+ *       JWTの1本にする）。登録・更新・削除はログイン必須。クライアントから
+ *       送られてきたuser_idは信用せず、必ずトークンから取得したIDを使う
+ *       （Zero Trust, AGENTS.md 4章）。
  */
 
 require_once __DIR__ . '/../../Services/Area/AreaService.php';
+require_once __DIR__ . '/../../Core/AuthMiddleware.php';
 
 class AreaController
 {
@@ -112,16 +112,14 @@ class AreaController
     }
 
     /**
-     * ログイン中のユーザーIDをセッションから取得する
-     * NOTE: Auth担当の実装方法（セッション名など）が確定次第、要調整
+     * ログイン中のユーザーIDをJWTから取得する
+     * 未ログイン／トークン不正の場合はAuthMiddleware側で401を返してexitするため、
+     * ここでは基本的にnullは返らないが、呼び出し側の既存の null チェックは
+     * 無害なので変更せず残している。
      */
     private function getAuthenticatedUserId(): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+        return AuthMiddleware::requireUserId();
     }
 
     /**

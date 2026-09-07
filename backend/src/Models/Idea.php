@@ -1,13 +1,15 @@
 <?php
 // アイデア（ideasテーブル）に対するDB操作をまとめたクラス
-// フィールド構成はfrontend側のAPI仕様（area_name / status / content / reason）に合わせている
+// area_id で areas テーブルと紐づく（登録済みの地域にしか紐づけられない）。
+// 一覧・詳細では areas を JOIN して地域名（area_name）も一緒に返す
+// （frontend側の表示・検索は従来どおり area_name ベースのため、互換性を保つ）。
 
 require_once __DIR__ . '/../Core/Database.php';
 
 class Idea
 {
     // アイデア一覧を取得する（アイデア閲覧：一覧画面用）
-    // $filters: ['area_name' => string, 'status' => 'success'|'failure']
+    // $filters: ['area_name' => string, 'area_id' => int, 'status' => 'success'|'failure']
     public static function all(array $filters = []): array
     {
         $conn = Database::getConnection();
@@ -16,14 +18,20 @@ class Idea
         $params = [];
         $index = 1;
 
+        if (!empty($filters['area_id'])) {
+            $conditions[] = 'ideas.area_id = $' . $index;
+            $params[] = (int) $filters['area_id'];
+            $index++;
+        }
+
         if (!empty($filters['area_name'])) {
-            $conditions[] = 'area_name ILIKE $' . $index;
+            $conditions[] = 'areas.name ILIKE $' . $index;
             $params[] = '%' . $filters['area_name'] . '%';
             $index++;
         }
 
         if (!empty($filters['status'])) {
-            $conditions[] = 'status = $' . $index;
+            $conditions[] = 'ideas.status = $' . $index;
             $params[] = $filters['status'];
             $index++;
         }
@@ -31,10 +39,12 @@ class Idea
         $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
         $sql = "
-            SELECT id, area_name, title, status, content, reason, created_at
+            SELECT ideas.id, ideas.area_id, areas.name AS area_name, ideas.title,
+                   ideas.status, ideas.content, ideas.reason, ideas.created_at
             FROM ideas
+            LEFT JOIN areas ON areas.id = ideas.area_id
             $where
-            ORDER BY created_at DESC
+            ORDER BY ideas.created_at DESC
         ";
 
         $result = $params
@@ -54,9 +64,11 @@ class Idea
         $conn = Database::getConnection();
 
         $sql = "
-            SELECT id, area_name, title, status, content, reason, created_at, updated_at
+            SELECT ideas.id, ideas.area_id, areas.name AS area_name, ideas.title,
+                   ideas.status, ideas.content, ideas.reason, ideas.created_at, ideas.updated_at
             FROM ideas
-            WHERE id = $1
+            LEFT JOIN areas ON areas.id = ideas.area_id
+            WHERE ideas.id = $1
         ";
 
         $result = pg_query_params($conn, $sql, [$id]);
@@ -70,24 +82,43 @@ class Idea
         return $row ?: null;
     }
 
+    // area_id が実在するareaを指しているか確認する
+    // （IdeaController::validate()から呼ぶ。DB外部キー制約に任せて500にするのではなく、
+    //   事前にチェックして422の分かりやすいエラーを返すため）
+    public static function areaExists(int $areaId): bool
+    {
+        $conn = Database::getConnection();
+
+        $result = pg_query_params($conn, 'SELECT 1 FROM areas WHERE id = $1', [$areaId]);
+
+        if ($result === false) {
+            throw new RuntimeException('地域の確認に失敗しました: ' . pg_last_error($conn));
+        }
+
+        return pg_fetch_assoc($result) !== false;
+    }
+
     // アイデアを新規登録する（アイデア入力）
+    // user_id・area_id はどちらもコントローラー側で検証済みの値を受け取る
+    // （user_idはクライアント入力を信用せずAuthMiddleware::requireUserId()から取得したもの、
+    //  area_idはareaExists()で実在確認済みのもの）。
     public static function create(array $data): int
     {
         $conn = Database::getConnection();
 
         $sql = "
-            INSERT INTO ideas (area_name, title, status, content, reason, user_id)
+            INSERT INTO ideas (area_id, title, status, content, reason, user_id)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING id
         ";
 
         $params = [
-            $data['area_name'],
+            $data['area_id'],
             $data['title'],
             $data['status'],
             $data['content'],
             $data['reason'],
-            $data['user_id'] ?? null, // TODO(SECURITY): ログイン機能実装後はセッションから取得したuser_idを渡す
+            $data['user_id'],
         ];
 
         $result = pg_query_params($conn, $sql, $params);

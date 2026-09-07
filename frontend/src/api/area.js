@@ -1,73 +1,39 @@
 /**
  * Area関連のAPIクライアント
  * バックエンド（生PHP）の /api/areas, /api/feature-tags エンドポイントを呼び出す
+ *
+ * NOTE(認証統一): 以前はここだけ独自のfetch実装で、Authorizationヘッダーを
+ *       付けていなかった（PHPセッション前提だったため）。AreaControllerが
+ *       JWT認証（AuthMiddleware::requireUserId()）に統一されたのに合わせて、
+ *       api/client.jsの共通fetchラッパー（JWTを自動付与する）を使うように変更した。
+ *       これをやらないと、ログイン中でも地域の登録・編集・削除が401になってしまう。
  */
+import { apiGet, apiPost, apiPut, apiDelete } from './client'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
-
-/**
- * レスポンスを共通処理する
- * エラー時はメッセージ・バリデーションエラーを含めて例外を投げる
- */
-async function handleResponse(response) {
-  const contentType = response.headers.get('content-type') ?? '';
-  const body = contentType.includes('application/json') ? await response.json() : null;
-
-  if (!response.ok) {
-    const error = new Error(body?.error ?? 'APIリクエストに失敗しました');
-    error.status = response.status;
-    error.errors = body?.errors ?? null;
-    throw error;
-  }
-
-  return body;
+export function fetchAreas() {
+  return apiGet('/areas')
 }
 
-export async function fetchAreas() {
-  const response = await fetch(`${API_BASE_URL}/areas`);
-  return handleResponse(response);
+export function fetchArea(id) {
+  return apiGet(`/areas/${id}`)
 }
 
-export async function fetchArea(id) {
-  const response = await fetch(`${API_BASE_URL}/areas/${id}`);
-  return handleResponse(response);
+export function createArea(payload) {
+  return apiPost('/areas', payload)
 }
 
-export async function createArea(payload) {
-  const response = await fetch(`${API_BASE_URL}/areas`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(response);
+export function updateArea(id, payload) {
+  return apiPut(`/areas/${id}`, payload)
 }
 
-export async function updateArea(id, payload) {
-  const response = await fetch(`${API_BASE_URL}/areas/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(response);
-}
-
-export async function deleteArea(id) {
-  const response = await fetch(`${API_BASE_URL}/areas/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    const error = new Error('削除に失敗しました');
-    error.status = response.status;
-    throw error;
-  }
+export function deleteArea(id) {
+  return apiDelete(`/areas/${id}`)
 }
 
 /**
  * 特色タグの選択肢一覧を取得する（登録・編集フォームのプルダウン用）
  * 誰かが新しいタグを登録すると、以後このAPIの結果に含まれるようになる
  */
-export async function fetchFeatureTags() {
-  const response = await fetch(`${API_BASE_URL}/feature-tags`);
-  return handleResponse(response);
+export function fetchFeatureTags() {
+  return apiGet('/feature-tags')
 }

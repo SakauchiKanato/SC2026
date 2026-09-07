@@ -1,5 +1,7 @@
 <script setup>
-import { reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { fetchAreas } from '../../api/area'
 
 const MAX_TITLE_LENGTH = 60
 const MAX_CONTENT_LENGTH = 1000
@@ -9,7 +11,9 @@ const emit = defineEmits(['submit'])
 
 const form = reactive({
   title: '',
-  areaName: '',
+  // NOTE(area_id): 自由入力の地域名だと、存在しない地域でも登録できてしまうため、
+  //       登録済みAreaの一覧から選ぶ方式にした（area_idをバックエンドへ送る）。
+  areaId: '',
   status: 'success',
   content: '',
   reason: '',
@@ -17,10 +21,28 @@ const form = reactive({
 
 const errors = reactive({
   title: '',
-  areaName: '',
+  areaId: '',
   content: '',
   reason: '',
 })
+
+const areas = ref([])
+const isLoadingAreas = ref(true)
+const areasLoadError = ref('')
+
+async function loadAreas() {
+  isLoadingAreas.value = true
+  areasLoadError.value = ''
+  try {
+    areas.value = await fetchAreas()
+  } catch {
+    areasLoadError.value = '地域一覧の取得に失敗しました。時間をおいて再度お試しください。'
+  } finally {
+    isLoadingAreas.value = false
+  }
+}
+
+onMounted(loadAreas)
 
 function validate() {
   errors.title = form.title.trim()
@@ -29,7 +51,7 @@ function validate() {
       : ''
     : 'タイトルを入力してください'
 
-  errors.areaName = form.areaName.trim() ? '' : '地域名を入力してください'
+  errors.areaId = form.areaId ? '' : '地域を選択してください（先に地域の登録が必要です）'
 
   errors.content = form.content.trim()
     ? form.content.length > MAX_CONTENT_LENGTH
@@ -43,7 +65,7 @@ function validate() {
       : ''
     : '理由を入力してください'
 
-  return !errors.title && !errors.areaName && !errors.content && !errors.reason
+  return !errors.title && !errors.areaId && !errors.content && !errors.reason
 }
 
 function handleSubmit() {
@@ -53,12 +75,12 @@ function handleSubmit() {
 
 function resetForm() {
   form.title = ''
-  form.areaName = ''
+  form.areaId = ''
   form.status = 'success'
   form.content = ''
   form.reason = ''
   errors.title = ''
-  errors.areaName = ''
+  errors.areaId = ''
   errors.content = ''
   errors.reason = ''
 }
@@ -82,15 +104,26 @@ defineExpose({ resetForm })
     </div>
 
     <div class="idea-form__field">
-      <label for="idea-area">地域名</label>
-      <input
+      <label for="idea-area">地域</label>
+      <select
         id="idea-area"
-        v-model="form.areaName"
-        type="text"
-        placeholder="例）長野県〇〇村"
-        :aria-invalid="Boolean(errors.areaName)"
-      />
-      <p v-if="errors.areaName" class="idea-form__error" role="alert">{{ errors.areaName }}</p>
+        v-model="form.areaId"
+        :disabled="isLoadingAreas"
+        :aria-invalid="Boolean(errors.areaId)"
+      >
+        <option value="" disabled>地域を選択してください</option>
+        <option v-for="area in areas" :key="area.id" :value="area.id">
+          {{ area.name }}
+        </option>
+      </select>
+      <p v-if="isLoadingAreas" class="idea-form__hint">地域一覧を読み込み中です…</p>
+      <p v-else-if="areasLoadError" class="idea-form__error" role="alert">{{ areasLoadError }}</p>
+      <p v-else-if="areas.length === 0" class="idea-form__hint">
+        登録されている地域がありません。先に
+        <RouterLink to="/areas/new">地域の登録</RouterLink>
+        が必要です。
+      </p>
+      <p v-if="errors.areaId" class="idea-form__error" role="alert">{{ errors.areaId }}</p>
     </div>
 
     <div class="idea-form__field">
@@ -161,7 +194,8 @@ defineExpose({ resetForm })
 }
 
 .idea-form__field input[type='text'],
-.idea-form__field textarea {
+.idea-form__field textarea,
+.idea-form__field select {
   border: 1px solid var(--idea-color-border);
   border-radius: var(--idea-radius);
   padding: 10px 12px;
@@ -172,13 +206,15 @@ defineExpose({ resetForm })
 }
 
 .idea-form__field input[type='text']:focus,
-.idea-form__field textarea:focus {
+.idea-form__field textarea:focus,
+.idea-form__field select:focus {
   outline: 2px solid var(--idea-color-accent);
   outline-offset: 1px;
 }
 
 .idea-form__field input[aria-invalid='true'],
-.idea-form__field textarea[aria-invalid='true'] {
+.idea-form__field textarea[aria-invalid='true'],
+.idea-form__field select[aria-invalid='true'] {
   border-color: var(--idea-color-danger);
 }
 
@@ -205,5 +241,11 @@ defineExpose({ resetForm })
   margin: 0;
   font-size: 0.8rem;
   color: var(--idea-color-danger);
+}
+
+.idea-form__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--idea-color-text-muted);
 }
 </style>

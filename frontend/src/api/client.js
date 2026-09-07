@@ -42,13 +42,20 @@ async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    // backend(IdeaController/AuthController)は単一エラーを{error: string}、
-    // バリデーションエラーを{errors: string[]}で返す。どちらにも対応する。
+    // backend(IdeaController/AuthController/AreaController)は単一エラーを
+    // {error: string} または {message: string}、バリデーションエラーを
+    // {errors: string[]}（配列）または {errors: {field: string}}（オブジェクト）で返す。
+    // どちらの形でも呼び出し側（各画面）が扱えるよう、messageに加えてstatus/errorsも
+    // 例外オブジェクトに載せておく（api/area.jsが元々やっていたのと同じ形）。
     const message =
       body?.error ||
+      body?.message ||
       (Array.isArray(body?.errors) ? body.errors.join(' / ') : null) ||
       `APIリクエストに失敗しました（status: ${response.status}）`
-    throw new Error(message)
+    const error = new Error(message)
+    error.status = response.status
+    error.errors = body?.errors ?? null
+    throw error
   }
 
   return body
@@ -60,4 +67,12 @@ export function apiGet(path) {
 
 export function apiPost(path, data) {
   return request(path, { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function apiPut(path, data) {
+  return request(path, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function apiDelete(path) {
+  return request(path, { method: 'DELETE' })
 }
