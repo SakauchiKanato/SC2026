@@ -3,6 +3,8 @@
  * バックエンド（生PHP）の /api/areas, /api/feature-tags エンドポイントを呼び出す
  */
 
+import { getAuthToken } from './client';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 /**
@@ -23,6 +25,14 @@ async function handleResponse(response) {
   return body;
 }
 
+// 新規登録・更新・削除はログイン必須のため、Authorizationヘッダーを付与する。
+// トークンはstore/auth.jsがapi/client.js経由で保持しているものを共有する
+// （ログインしていない場合はundefinedのままなの��、backend側でAuthMiddlewareが401を返す）。
+function authHeaders() {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function fetchAreas() {
   const response = await fetch(`${API_BASE_URL}/areas`);
   return handleResponse(response);
@@ -36,7 +46,7 @@ export async function fetchArea(id) {
 export async function createArea(payload) {
   const response = await fetch(`${API_BASE_URL}/areas`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
   });
   return handleResponse(response);
@@ -45,7 +55,7 @@ export async function createArea(payload) {
 export async function updateArea(id, payload) {
   const response = await fetch(`${API_BASE_URL}/areas/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
   });
   return handleResponse(response);
@@ -54,6 +64,7 @@ export async function updateArea(id, payload) {
 export async function deleteArea(id) {
   const response = await fetch(`${API_BASE_URL}/areas/${id}`, {
     method: 'DELETE',
+    headers: { ...authHeaders() },
   });
 
   if (!response.ok) {
@@ -64,7 +75,7 @@ export async function deleteArea(id) {
 }
 
 /**
- * 特色タグの選択肢一覧を取得する（登録・編集フォームのプルダウン用）
+ * 特色タグの選択肢一覧を取得する（登録・編集フォーユのプルダウン用）
  * 誰かが新しいタグを登録すると、以後このAPIの結果に含まれるようになる
  */
 export async function fetchFeatureTags() {

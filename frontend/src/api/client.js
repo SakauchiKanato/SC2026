@@ -13,6 +13,12 @@ export function clearAuthToken() {
   authToken = null
 }
 
+// api/area.js等、request()を経由せず独自にfetch()するモジュールから
+// 現在のトークンを参照するためのgetter。
+export function getAuthToken() {
+  return authToken
+}
+
 /**
  * PHP側APIへの共通fetchラッパー。
  * ベースURLの付与と、エラー時のメッセージ整形をここに集約する。

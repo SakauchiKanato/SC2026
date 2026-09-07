@@ -3,9 +3,6 @@
 /**
  * Area コントローラー
  *
- * NOTE: ルーティング（public/index.php）はまだ存在しない（他メンバー実装予定）。
- *       このコントローラーは以下の呼び出し規約を想定して実装している：
- *
  *   GET    /api/areas       -> index()
  *   GET    /api/areas/{id}  -> show($id)
  *   POST   /api/areas       -> store()
@@ -13,15 +10,17 @@
  *   DELETE /api/areas/{id}  -> destroy($id)
  *
  * 各メソッドはレスポンスをJSONで出力し、適切なHTTPステータスコードを設定する。
- * ルーター実装時にこの規約と合わない場合は調整をお願いします。
  *
- * NOTE: 認証済みユーザーIDは $_SESSION['user_id'] に格納されている前提で
- *       実装している（Auth担当の実装が固まり次第、要すり合わせ）。
- *       登録・更新・削除はログイン必須。クライアントから送られてきたuser_idは
- *       信用せず、必ずセッションから取得したIDを使う（Zero Trust, AGENTS.md 4章）。
+ * 認証: ログイン中のユーザーIDはAuthMiddleware::requireUserId()経由で
+ *       Authorizationヘッダー（JWT）から取得する（Auth機能はJWT方式のため）。
+ *       クライアントから送られてきたuser_idは信用せず、必ずトークンから
+ *       取得したIDを使う（Zero Trust, AGENTS.md 4章）。
+ *       登録・更新・削除はログイン必須。トークンが無い/不正な場合は
+ *       AuthMiddleware側で401を返して処理を終了する。
  */
 
 require_once __DIR__ . '/../../Services/Area/AreaService.php';
+require_once __DIR__ . '/../../Core/AuthMiddleware.php';
 
 class AreaController
 {
@@ -59,11 +58,8 @@ class AreaController
 
     public function store(): void
     {
-        $userId = $this->getAuthenticatedUserId();
-        if ($userId === null) {
-            $this->respond(401, ['error' => 'ログインが必要です']);
-            return;
-        }
+        // トークンが無い/不正な場合はAuthMiddleware内で401を返してexitする
+        $userId = AuthMiddleware::requireUserId();
 
         $input = $this->readJsonBody();
 
@@ -77,11 +73,7 @@ class AreaController
 
     public function update(int $id): void
     {
-        $userId = $this->getAuthenticatedUserId();
-        if ($userId === null) {
-            $this->respond(401, ['error' => 'ログインが必要です']);
-            return;
-        }
+        $userId = AuthMiddleware::requireUserId();
 
         $input = $this->readJsonBody();
 
@@ -97,11 +89,7 @@ class AreaController
 
     public function destroy(int $id): void
     {
-        $userId = $this->getAuthenticatedUserId();
-        if ($userId === null) {
-            $this->respond(401, ['error' => 'ログインが必要です']);
-            return;
-        }
+        $userId = AuthMiddleware::requireUserId();
 
         try {
             $this->areaService->delete($id, $userId);
@@ -109,19 +97,6 @@ class AreaController
         } catch (\RuntimeException $e) {
             $this->respond($this->resolveErrorStatus($e), ['error' => $e->getMessage()]);
         }
-    }
-
-    /**
-     * ログイン中のユーザーIDをセッションから取得する
-     * NOTE: Auth担当の実装方法（セッション名など）が確定次第、要調整
-     */
-    private function getAuthenticatedUserId(): ?int
-    {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
     }
 
     /**
