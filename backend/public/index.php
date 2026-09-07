@@ -22,16 +22,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../src/Controllers/Idea/IdeaController.php';
-// TODO: 他の担当者が実装したら以下も追加する
+require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
+// TODO: Auth機能がmainにマージされたら追加する
 // require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
-// require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
 // require_once __DIR__ . '/../src/Controllers/Company/CompanyController.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-$uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// index.php がドキュメントルート直下にある前提で、/api 以下のパスだけ取り出す
-$path = preg_replace('#^/api#', '', $uri);
+// PATH_INFOを使う（REQUEST_URIから素直に切り出す方式だと、共用サーバーの
+// https://example.com/~user/プロジェクト名/backend/public/index.php のように
+// index.phpが深い階層に置かれた場合にパスの切り出しがずれてしまうため）。
+// index.php/ideas のようにindex.phpを明示したURLでアクセスすれば、
+// index.php以降の部分がPATH_INFOとしてどんな設置階層でも正しく取れる。
+// （Apache + PHPの標準機能で、rewriteルールの設定は不要）
+$path = $_SERVER['PATH_INFO'] ?? '/';
 $path = rtrim($path, '/');
 if ($path === '') {
     $path = '/';
@@ -39,15 +43,20 @@ if ($path === '') {
 
 // ルーティング定義：[HTTPメソッド, パスのパターン, コントローラー, メソッド名]
 $routes = [
-    ['GET',  '#^/ideas$#',       'IdeaController', 'index'],
-    ['GET',  '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
-    ['POST', '#^/ideas$#',       'IdeaController', 'store'],
+    ['GET',    '#^/ideas$#',       'IdeaController', 'index'],
+    ['GET',    '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
+    ['POST',   '#^/ideas$#',       'IdeaController', 'store'],
 
-    // TODO: 他の担当者が実装したらここにルートを追加する
+    ['GET',    '#^/areas$#',        'AreaController', 'index'],
+    ['GET',    '#^/areas/(\d+)$#',  'AreaController', 'show'],
+    ['POST',   '#^/areas$#',        'AreaController', 'store'],
+    ['PUT',    '#^/areas/(\d+)$#',  'AreaController', 'update'],
+    ['DELETE', '#^/areas/(\d+)$#',  'AreaController', 'destroy'],
+    ['GET',    '#^/feature-tags$#', 'AreaController', 'tags'],
+
+    // TODO: Auth機能がmainにマージされたら追加する
     // ['POST', '#^/signup$#',   'AuthController', 'signup'],
     // ['POST', '#^/login$#',    'AuthController', 'login'],
-    // ['GET',  '#^/areas$#',    'AreaController', 'index'],
-    // ['POST', '#^/areas$#',    'AreaController', 'store'],
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controllerName, $action]) {
@@ -71,4 +80,4 @@ foreach ($routes as [$routeMethod, $pattern, $controllerName, $action]) {
 
 http_response_code(404);
 header('Content-Type: application/json; charset=utf-8');
-echo json_encode(['error' => 'Not Found'], JSON_UNESCAPED_UNICODE);
+echo json_encode(['message' => 'Not Found'], JSON_UNESCAPED_UNICODE);

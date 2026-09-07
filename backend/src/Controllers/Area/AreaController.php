@@ -39,6 +39,14 @@ class AreaController
         $this->respond(200, $areas);
     }
 
+    // GET /feature-tags … 特色タグの選択肢一覧（AreaFormViewのプルダウン用）
+    // NOTE: AreaService::getAllTags()は既にあったが、呼び出す口が無かったため追加。
+    public function tags(): void
+    {
+        $tags = $this->areaService->getAllTags();
+        $this->respond(200, $tags);
+    }
+
     public function show(int $id): void
     {
         try {
