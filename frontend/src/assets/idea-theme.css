@@ -475,12 +475,24 @@ body {
   -webkit-box-decoration-break: clone;
 }
 
-/* 中央の大きな双葉型CTA（1枚のSVGで発案者／企業・自治体の両リンクを表現） */
+/* 中央の大きな双葉型CTA。
+   SVG（装飾のみ・pointer-events:noneでクリックを透過）の上に、通常のHTML要素
+   （RouterLink）を絶対配置で重ねてクリック領域にしている
+   （foreignObject内のリンクはブラウザによってクリックを拾えないことがあるため採用）。 */
 .mt-landing__cta {
-  display: block;
+  position: relative;
   width: min(600px, 92vw);
-  height: auto;
+  aspect-ratio: 600 / 330;
   margin: 0 auto;
+}
+
+.mt-leaf-graphic {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
 }
 
 .mt-leaf-graphic__lobe {
@@ -488,7 +500,6 @@ body {
   stroke: var(--mt-color-outline);
   stroke-width: 4;
   stroke-linejoin: round;
-  transition: filter 0.15s ease;
 }
 
 .mt-leaf-graphic__vein {
@@ -509,15 +520,15 @@ body {
   fill: var(--mt-color-soil);
 }
 
-.mt-leaf-graphic__slot {
-  width: 100%;
-  height: 100%;
+/* リーフ上に重ねる実際のクリック領域（座標は元のforeignObjectと同じ位置を%換算） */
+.mt-leaf-graphic__hit {
+  position: absolute;
+  top: 34.8%;
+  height: 36.4%;
+  width: 36.7%;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.mt-leaf-graphic__link {
   color: #16240c;
   text-decoration: none;
   text-align: center;
@@ -527,7 +538,15 @@ body {
   padding: 4px;
 }
 
-.mt-leaf-graphic__link:hover {
+.mt-leaf-graphic__hit--left {
+  left: 8.3%;
+}
+
+.mt-leaf-graphic__hit--right {
+  left: 55%;
+}
+
+.mt-leaf-graphic__hit:hover {
   text-decoration: underline;
 }
 
@@ -535,7 +554,7 @@ body {
   .mt-landing__hero {
     padding-top: 72px;
   }
-  .mt-leaf-graphic__link {
+  .mt-leaf-graphic__hit {
     font-size: 1rem;
   }
 }
