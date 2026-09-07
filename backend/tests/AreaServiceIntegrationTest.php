@@ -7,9 +7,15 @@
  * - backend/src/Core/Database.php はまだ存在しないため、
  *   backend/tests/support/TestDatabase.php で直接PDO接続している
  * - areasテーブルは他メンバー実装の初期スキーマで作成済み（user_id NOT NULL）。
- *   このテストは、テスト用のダミーユーザーを1件作成してそのIDを使う
- * - このテストは全ての変更を1つのトランザクション内で行い、最後に必ずロールバックする。
- *   実行してもDBにデータは残らない（ダミーユーザーも含む）
+ *   このテストは、テスト用のダミーユーザーを2件作成してそのIDを使う
+ * - AreaService::create()/update() は内部で $pdo->beginTransaction() を呼ぶため、
+ *   このテスト側で外側のトランザクションを張ることはできない（PDOはネストした
+ *   トランザクションをサポートしていない）。そのため、ロールバックではなく
+ *   最後に明示的な後片付け（テスト用ユーザーの削除）を行う。
+ *   users -> areas -> area_feature_tags はON DELETE CASCADEで連動しているため、
+ *   テスト用ユーザーを削除するだけでAreaと紐づけも一緒に消える。
+ *   feature_tags（温泉、学生の町など）自体は「登録され続けるマスターデータ」
+ *   という設計上、テストで作られたタグ名はそのまま残るが実害はない。
  *
  * 実行方法:
  *   php backend/tests/AreaServiceIntegrationTest.php
@@ -65,33 +71,34 @@ if (!$tableExists || $tableExists === 'f') {
     exit(1);
 }
 
-// 全ての変更をロールバックするため、テスト全体を1つのトランザクションで囲む
-$pdo->beginTransaction();
+$testUserId = null;
+$otherUserId = null;
 
 try {
     // テスト用のダミーユーザーを作成（areas.user_idのFK制約を満たすため）
+    // NOTE: usersテーブルの実際のカラムは id, uname, upass, email の4つのみ
     $userStmt = $pdo->prepare(
-        "INSERT INTO users (name, email, password_hash, role)
-         VALUES (:name, :email, :password_hash, 'user')
+        "INSERT INTO users (uname, upass, email)
+         VALUES (:uname, :upass, :email)
          RETURNING id"
     );
     $userStmt->execute([
-        'name' => '統合テスト用ユーザー',
+        'uname' => '統合テスト用ユーザー',
+        'upass' => 'dummy-hash',
         'email' => 'area-integration-test@example.com',
-        'password_hash' => 'dummy-hash',
     ]);
     $testUserId = (int) $userStmt->fetchColumn();
     assertTrue($testUserId > 0, 'テスト用ユーザーを作成できる');
 
     $otherUserStmt = $pdo->prepare(
-        "INSERT INTO users (name, email, password_hash, role)
-         VALUES (:name, :email, :password_hash, 'user')
+        "INSERT INTO users (uname, upass, email)
+         VALUES (:uname, :upass, :email)
          RETURNING id"
     );
     $otherUserStmt->execute([
-        'name' => '別のユーザー',
+        'uname' => '別のユーザー',
+        'upass' => 'dummy-hash',
         'email' => 'area-integration-test-other@example.com',
-        'password_hash' => 'dummy-hash',
     ]);
     $otherUserId = (int) $otherUserStmt->fetchColumn();
 
@@ -177,12 +184,19 @@ try {
         assertEquals($countBefore, $countAfter, 'バリデーションエラー時はレコードが増えない');
     }
 } finally {
-    // テストで作成したデータ（ダミーユーザーを含む）は全てロールバックし、DBには何も残さない
-    $pdo->rollBack();
+    // テスト用ユーザーを削除する。ON DELETE CASCADEにより、
+    // そのユーザーが作成したAreaと中間テーブルの紐づけも一緒に消える。
+    // feature_tags自体（温泉、学生の町など）は育っていくマスターデータのため残すが、実害はない。
+    if ($testUserId !== null) {
+        $pdo->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $testUserId]);
+    }
+    if ($otherUserId !== null) {
+        $pdo->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $otherUserId]);
+    }
 }
 
 echo "\n--------------------------------\n";
 echo "結果: {$passCount} PASS / {$failureCount} FAIL\n";
-echo "(注: 全ての変更はロールバック済みです。DBにテストデータは残っていません)\n";
+echo "(注: テスト用ユーザー・Areaは後片付け済みです。feature_tagsのみ残ります)\n";
 
 exit($failureCount > 0 ? 1 : 0);
