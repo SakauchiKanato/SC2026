@@ -1,6 +1,6 @@
 /**
  * Area関連のAPIクライアント
- * バックエンド（生PHP）の /api/areas エンドポイントを呼び出す
+ * バックエンド（生PHP）の /api/areas, /api/feature-tags エンドポイントを呼び出す
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
@@ -61,4 +61,13 @@ export async function deleteArea(id) {
     error.status = response.status;
     throw error;
   }
+}
+
+/**
+ * 特色タグの選択肢一覧を取得する（登録・編集フォームのプルダウン用）
+ * 誰かが新しいタグを登録すると、以後このAPIの結果に含まれるようになる
+ */
+export async function fetchFeatureTags() {
+  const response = await fetch(`${API_BASE_URL}/feature-tags`);
+  return handleResponse(response);
 }
