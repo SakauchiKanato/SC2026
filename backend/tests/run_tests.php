@@ -19,7 +19,10 @@ $hasFailure = false;
 
 foreach ($testFiles as $testFile) {
     echo '=== ' . basename($testFile) . " ===\n";
-    passthru('php ' . escapeshellarg($testFile), $exitCode);
+    // PHP_BINARY: 現在このランナーを実行しているPHPインタプリタの絶対パス。
+    // 単に「php」と書くとPATHに無い環境（例: XAMPP同梱phpを直接指定して実行した場合）で
+    // 「'php' is not recognized」となってしまうため、実行中のPHPと同じバイナリを明示的に使う。
+    passthru(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($testFile), $exitCode);
     echo "\n";
 
     if ($exitCode !== 0) {
