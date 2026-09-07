@@ -9,7 +9,6 @@ const emit = defineEmits(['submit'])
 
 const form = reactive({
   title: '',
-  areaName: '',
   status: 'success',
   content: '',
   reason: '',
@@ -17,7 +16,6 @@ const form = reactive({
 
 const errors = reactive({
   title: '',
-  areaName: '',
   content: '',
   reason: '',
 })
@@ -28,8 +26,6 @@ function validate() {
       ? `タイトルは${MAX_TITLE_LENGTH}文字以内で入力してください`
       : ''
     : 'タイトルを入力してください'
-
-  errors.areaName = form.areaName.trim() ? '' : '地域名を入力してください'
 
   errors.content = form.content.trim()
     ? form.content.length > MAX_CONTENT_LENGTH
@@ -43,7 +39,7 @@ function validate() {
       : ''
     : '理由を入力してください'
 
-  return !errors.title && !errors.areaName && !errors.content && !errors.reason
+  return !errors.title && !errors.content && !errors.reason
 }
 
 function handleSubmit() {
@@ -53,12 +49,10 @@ function handleSubmit() {
 
 function resetForm() {
   form.title = ''
-  form.areaName = ''
   form.status = 'success'
   form.content = ''
   form.reason = ''
   errors.title = ''
-  errors.areaName = ''
   errors.content = ''
   errors.reason = ''
 }

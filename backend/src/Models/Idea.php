@@ -1,45 +1,40 @@
 <?php
 // アイデア（ideasテーブル）に対するDB操作をまとめたクラス
-// フィールド構成はfrontend側のAPI仕様（area_name / status / content / reason）に合わせている
+// 「街タネ」UIでは、発案者が特定の地域ページからアイデア登録に進むため、
+// area_id（areasテーブルへの外部キー）で正式に紐付ける。
+// area名はareasテーブルとJOINして取得する（表示用）。
 
 require_once __DIR__ . '/../Core/Database.php';
 
 class Idea
 {
-    // アイデア一覧を取得する（アイデア閲覧：一覧画面用）
-    // $filters: ['area_name' => string, 'status' => 'success'|'failure']
-    public static function all(array $filters = []): array
+    // 指定した地域のアイデア一覧を取得する（新着アイデア／過去のアイデア画面用）
+    // $filters: ['status' => 'success'|'failure']（任意）
+    public static function allForArea(int $areaId, array $filters = []): array
     {
         $conn = Database::getConnection();
 
-        $conditions = [];
-        $params = [];
-        $index = 1;
-
-        if (!empty($filters['area_name'])) {
-            $conditions[] = 'area_name ILIKE $' . $index;
-            $params[] = '%' . $filters['area_name'] . '%';
-            $index++;
-        }
+        $conditions = ['i.area_id = $1'];
+        $params = [$areaId];
+        $index = 2;
 
         if (!empty($filters['status'])) {
-            $conditions[] = 'status = $' . $index;
+            $conditions[] = 'i.status = $' . $index;
             $params[] = $filters['status'];
             $index++;
         }
 
-        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+        $where = 'WHERE ' . implode(' AND ', $conditions);
 
         $sql = "
-            SELECT id, area_name, title, status, content, reason, created_at
-            FROM ideas
+            SELECT i.id, i.area_id, a.name AS area_name, i.title, i.status, i.content, i.reason, i.created_at
+            FROM ideas i
+            JOIN areas a ON a.id = i.area_id
             $where
-            ORDER BY created_at DESC
+            ORDER BY i.created_at DESC
         ";
 
-        $result = $params
-            ? pg_query_params($conn, $sql, $params)
-            : pg_query($conn, $sql);
+        $result = pg_query_params($conn, $sql, $params);
 
         if ($result === false) {
             throw new RuntimeException('アイデア一覧の取得に失敗しました: ' . pg_last_error($conn));
@@ -54,9 +49,11 @@ class Idea
         $conn = Database::getConnection();
 
         $sql = "
-            SELECT id, area_name, title, status, content, reason, created_at, updated_at
-            FROM ideas
-            WHERE id = $1
+            SELECT i.id, i.area_id, a.name AS area_name, i.title, i.status, i.content, i.reason,
+                   i.created_at, i.updated_at
+            FROM ideas i
+            JOIN areas a ON a.id = i.area_id
+            WHERE i.id = $1
         ";
 
         $result = pg_query_params($conn, $sql, [$id]);
@@ -70,24 +67,24 @@ class Idea
         return $row ?: null;
     }
 
-    // アイデアを新規登録する（アイデア入力）
+    // アイデアを新規登録する（アイデア入力。特定の地域ページから遷移してくるため area_id は必須）
     public static function create(array $data): int
     {
         $conn = Database::getConnection();
 
         $sql = "
-            INSERT INTO ideas (area_name, title, status, content, reason, user_id)
+            INSERT INTO ideas (area_id, title, status, content, reason, user_id)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING id
         ";
 
         $params = [
-            $data['area_name'],
+            $data['area_id'],
             $data['title'],
             $data['status'],
             $data['content'],
             $data['reason'],
-            $data['user_id'] ?? null, // TODO(SECURITY): ログイン機能実装後はセッションから取得したuser_idを渡す
+            $data['user_id'],
         ];
 
         $result = pg_query_params($conn, $sql, $params);

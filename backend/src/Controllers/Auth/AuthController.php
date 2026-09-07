@@ -51,7 +51,20 @@ class AuthController
         }
     }
 
+    // 実際のroleとは異なるロール向けログインページでログインしようとした場合のメッセージ
+    // （例: 発案者アカウントで企業・自治体ログインページからログインしようとした場合）
+    private const ROLE_LABELS = [
+        'user' => '発案者',
+        'company' => '企業・自治体',
+    ];
+
     // POST /api/login … ログイン。成功時にJWTを発行する。
+    // NOTE: フロントの発案者ログイン/企業・自治体ログインの2ページは同じAPIを呼ぶが、
+    //       どちらのページからのリクエストかを$input['role']として送ってもらい、
+    //       アカウントの実際のroleと一致しない場合は拒否する
+    //       （例: 発案者として登録したアカウントで企業・自治体ログインページからログインできてしまい、
+    //       ヘッダーの表示やその後の画面が発案者向けのままになってしまう不具合の修正）。
+    //       role未指定の場合（古いクライアント等）は従来通りチェックしない。
     public function login(): void
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -64,6 +77,7 @@ class AuthController
 
         $email = trim($input['email']);
         $password = $input['password'];
+        $expectedRole = is_string($input['role'] ?? null) ? $input['role'] : null;
 
         try {
             $user = User::findByEmail($email);
@@ -72,6 +86,11 @@ class AuthController
             // どちらも同じメッセージ・401で返す（メールアドレスの登録有無を推測されないようにするため）
             if ($user === null || !User::verifyPassword($password, $user['password_hash'])) {
                 self::jsonResponse(401, ['error' => 'メールアドレスまたはパスワードが正しくありません']);
+                return;
+            }
+
+            if ($expectedRole !== null && $expectedRole !== $user['role']) {
+                self::jsonResponse(403, ['error' => self::roleMismatchMessage($user['role'])]);
                 return;
             }
 
@@ -84,6 +103,12 @@ class AuthController
             error_log('[AuthController::login] ' . $e->getMessage());
             self::jsonResponse(500, ['error' => 'ログインに失敗しました']);
         }
+    }
+
+    private static function roleMismatchMessage(string $actualRole): string
+    {
+        $label = self::ROLE_LABELS[$actualRole] ?? $actualRole;
+        return "このアカウントは{$label}として登録されています。{$label}ログインをご利用ください。";
     }
 
     // GET /api/me … 現在ログイン中のユーザー情報を返す（トークンの有効性チェックにも使う）
@@ -156,6 +181,10 @@ class AuthController
         if (empty($input['password'])) {
             $errors[] = 'password は必須です';
         }
+
+        // ログインページ側から渡されるrole（'user'|'company'）の形式チェック。
+        // 未指定ならチェックしない（後方互換）。実際のアカウントのroleとの一致判定はlogin()側で行う。
+        $errors = array_merge($errors, self::validateRole($input['role'] ?? null));
 
         return $errors;
     }

@@ -1,11 +1,15 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import SignupForm from '../../components/Auth/SignupForm.vue'
 import { useAuthStore } from '../../store/auth'
 
 const router = useRouter()
+const route = useRoute()
 const { errorMessage, isLoading, signup } = useAuthStore()
+
+// /login/proposer, /login/company の「新規登録」リンクからrole=user|companyが渡ってくる
+const defaultRole = computed(() => (route.query.role === 'company' ? 'company' : 'user'))
 
 async function handleSubmit(payload) {
   try {
@@ -20,7 +24,7 @@ async function handleSubmit(payload) {
 </script>
 
 <template>
-  <section class="auth-view">
+  <section class="mt-page auth-view">
     <header class="idea-page-header">
       <h1>新規登録</h1>
       <p class="idea-page-description">
@@ -32,13 +36,15 @@ async function handleSubmit(payload) {
       {{ errorMessage }}
     </p>
 
-    <SignupForm @submit="handleSubmit" />
+    <SignupForm :default-role="defaultRole" @submit="handleSubmit" />
 
     <p v-if="isLoading" class="idea-loading-indicator">登録中です…</p>
 
     <p class="auth-view__switch">
       すでにアカウントをお持ちですか？
-      <RouterLink to="/login">ログイン</RouterLink>
+      <RouterLink :to="{ name: 'login-proposer' }">発案者ログイン</RouterLink>
+      /
+      <RouterLink :to="{ name: 'login-company' }">企業・自治体ログイン</RouterLink>
     </p>
   </section>
 </template>
@@ -46,8 +52,6 @@ async function handleSubmit(payload) {
 <style scoped>
 .auth-view {
   max-width: 480px;
-  margin: 0 auto;
-  padding: var(--idea-spacing-lg) var(--idea-spacing-md);
 }
 
 .auth-view__switch {

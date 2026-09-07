@@ -18,7 +18,7 @@ class User
 
         $sql = "
             SELECT id, name, email, password_hash, role, created_at
-            FROM users
+            FROM sc2026_users
             WHERE email = $1
         ";
 
@@ -40,7 +40,7 @@ class User
 
         $sql = "
             SELECT id, name, email, role, created_at
-            FROM users
+            FROM sc2026_users
             WHERE id = $1
         ";
 
@@ -65,7 +65,7 @@ class User
         $passwordHash = self::hashPassword($plainPassword);
 
         $sql = "
-            INSERT INTO users (name, email, password_hash, role)
+            INSERT INTO sc2026_users (name, email, password_hash, role)
             VALUES ($1, $2, $3, $4)
             RETURNING id
         ";
