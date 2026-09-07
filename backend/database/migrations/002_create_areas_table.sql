@@ -1,29 +1,15 @@
--- Areaテーブル、特色タグテーブルの作成（PostgreSQL構文）
--- 地域の地理情報・特色を保存する独立したマスターデータ（所有者(user)なし）
+-- 特色タグ機能の追加（feature_tags / area_feature_tags）
 --
--- 「特色」は以下の2種類を別カラム・別テーブルで持たせる設計にしている：
---   - description: 長文の自由記述（1エリアにつき1つ）
---   - feature_tags: 短いタグ（複数選択可能）。誰かが入力したタグは以後
---     全員がプルダウンから再利用できるよう、マスターテーブルとして独立させている
+-- NOTE: areasテーブル本体は、初期スキーマ（users/company_profiles/ideas/contacts等と
+-- 一緒に作成されたもの）で既に定義済みのため、ここでは作成しない。
+-- （当初このファイルでareasも作成する想定だったが、既に別のマイグレーションで
+--  作成済みだったため、feature_tags関連のみに変更した）
 --
--- NOTE: ファイル名の連番はチームで採番ルールを決めた際に調整してください。
---       (login/signup用のマイグレーションが001であることを想定して002にしています)
-
-CREATE TABLE IF NOT EXISTS areas (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,             -- 地域名
-    prefecture VARCHAR(50) NOT NULL,        -- 都道府県
-    city VARCHAR(100) NOT NULL,             -- 市区町村
-    latitude DECIMAL(9,6) NULL,             -- 緯度
-    longitude DECIMAL(9,6) NULL,            -- 経度
-    description TEXT NOT NULL,              -- 特色の説明文（自由記述）
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    -- NOTE: PostgreSQLには「ON UPDATE CURRENT_TIMESTAMP」に相当する構文がないため、
-    --       updated_atの更新はアプリケーション側（Area::update()）で明示的に行っている
-);
-
-CREATE INDEX IF NOT EXISTS idx_areas_prefecture_city ON areas (prefecture, city);
+-- areasの実際のカラム: id, user_id, name, features, latitude, longitude,
+--                      address, created_at, updated_at
+-- 「特色」は既存の features（自由記述・任意）に加えて、複数選択可能な短いタグを
+-- feature_tags / area_feature_tags で追加できるようにしている。
+-- 誰かが入力したタグは以後全員がプルダウンから再利用できる。
 
 CREATE TABLE IF NOT EXISTS feature_tags (
     id SERIAL PRIMARY KEY,
