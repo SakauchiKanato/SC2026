@@ -75,18 +75,7 @@ defineExpose({ resetForm })
       <p v-if="errors.title" class="idea-form__error" role="alert">{{ errors.title }}</p>
     </div>
 
-    <div class="idea-form__field">
-      <label for="idea-area">地域名</label>
-      <input
-        id="idea-area"
-        v-model="form.areaName"
-        type="text"
-        placeholder="例）長野県〇〇村"
-        :aria-invalid="Boolean(errors.areaName)"
-      />
-      <p v-if="errors.areaName" class="idea-form__error" role="alert">{{ errors.areaName }}</p>
-    </div>
-
+    
     
 
     <div class="idea-form__field">
