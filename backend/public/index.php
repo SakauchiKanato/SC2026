@@ -14,7 +14,7 @@ error_reporting(E_ALL);
 $allowedOrigin = getenv('ALLOWED_ORIGIN') ?: 'http://localhost:5173';
 header('Access-Control-Allow-Origin: ' . $allowedOrigin);
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -22,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../src/Controllers/Idea/IdeaController.php';
-require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
-// TODO: Auth機能がmainにマージされたら追加する
-// require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
+require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
+// TODO: 他の担当者が実装したら以下も追加する
+// require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
 // require_once __DIR__ . '/../src/Controllers/Company/CompanyController.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -41,22 +41,27 @@ if ($path === '') {
     $path = '/';
 }
 
+// ヘルスチェック用エンドポイント（AGENTS.md 9節：障害検知のため用意する）
+if ($path === '/health') {
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'ok'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // ルーティング定義：[HTTPメソッド, パスのパターン, コントローラー, メソッド名]
 $routes = [
     ['GET',    '#^/ideas$#',       'IdeaController', 'index'],
     ['GET',    '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
     ['POST',   '#^/ideas$#',       'IdeaController', 'store'],
 
-    ['GET',    '#^/areas$#',        'AreaController', 'index'],
-    ['GET',    '#^/areas/(\d+)$#',  'AreaController', 'show'],
-    ['POST',   '#^/areas$#',        'AreaController', 'store'],
-    ['PUT',    '#^/areas/(\d+)$#',  'AreaController', 'update'],
-    ['DELETE', '#^/areas/(\d+)$#',  'AreaController', 'destroy'],
-    ['GET',    '#^/feature-tags$#', 'AreaController', 'tags'],
+    ['POST', '#^/signup$#', 'AuthController', 'signup'],
+    ['POST', '#^/login$#',  'AuthController', 'login'],
+    ['GET',  '#^/me$#',     'AuthController', 'me'],
 
-    // TODO: Auth機能がmainにマージされたら追加する
-    // ['POST', '#^/signup$#',   'AuthController', 'signup'],
-    // ['POST', '#^/login$#',    'AuthController', 'login'],
+    // TODO: 他の担当者が実装したらここにルートを追加する
+    // ['GET',  '#^/areas$#',    'AreaController', 'index'],
+    // ['POST', '#^/areas$#',    'AreaController', 'store'],
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controllerName, $action]) {

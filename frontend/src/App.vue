@@ -1,68 +1,64 @@
 <script setup>
+import { RouterLink, RouterView } from 'vue-router'
+import { useAuthStore } from './store/auth'
+
+const { user, isAuthenticated, logout } = useAuthStore()
 </script>
 
 <template>
   <div class="app-shell">
     <header class="app-header">
-      <h1 class="app-title">地域活性化アイデア共有アプリ</h1>
-      <nav class="app-nav">
-        <router-link to="/ideas">アイデアを見る</router-link>
-        <router-link to="/ideas/new">アイデアを登録する</router-link>
-        <router-link to="/areas">地域一覧</router-link>
-        <router-link to="/areas/new">地域を登録する</router-link>
+      <RouterLink to="/" class="app-header__brand">地域活性化アイデア共有</RouterLink>
+
+      <nav class="app-header__nav">
+        <template v-if="isAuthenticated">
+          <span class="app-header__user">{{ user?.name }} さん</span>
+          <button type="button" class="idea-button idea-button--secondary" @click="logout">
+            ログアウト
+          </button>
+        </template>
+        <template v-else>
+          <RouterLink to="/login" class="idea-button idea-button--secondary">ログイン</RouterLink>
+          <RouterLink to="/signup" class="idea-button">新規登録</RouterLink>
+        </template>
       </nav>
     </header>
 
     <main class="app-main">
-      <router-view />
+      <RouterView />
     </main>
   </div>
 </template>
 
 <style scoped>
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
 .app-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid #e2e2e2;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  padding: var(--idea-spacing-md) var(--idea-spacing-lg);
+  border-bottom: 1px solid var(--idea-color-border);
+  background: var(--idea-color-surface);
 }
 
-.app-title {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.app-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.app-nav a {
-  color: inherit;
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.app-nav a:hover {
-  text-decoration: underline;
-}
-
-.app-nav a.router-link-active {
+.app-header__brand {
   font-weight: 700;
+  color: var(--idea-color-primary);
+  text-decoration: none;
+}
+
+.app-header__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--idea-spacing-sm);
+}
+
+.app-header__user {
+  color: var(--idea-color-text);
+  font-size: 0.9rem;
+  margin-right: var(--idea-spacing-sm);
 }
 
 .app-main {
-  flex: 1;
-  width: 100%;
+  min-height: calc(100vh - 65px);
 }
 </style>
