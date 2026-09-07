@@ -8,9 +8,9 @@
  * 選択・再利用できるようにする想定。
  *
  * NOTE: backend/src/Core/Database.php はまだ存在しない（他メンバー実装予定）。
+ *       PDOを直接コンストラクタで受け取った場合はCore/Database.phpを読み込まないため、
+ *       Core/Database.php完成前でもテストからは動かせる。
  */
-
-require_once __DIR__ . '/../Core/Database.php';
 
 class FeatureTag
 {
@@ -21,7 +21,13 @@ class FeatureTag
 
     public function __construct(?\PDO $connection = null)
     {
-        $this->db = $connection ?? Database::getConnection();
+        if ($connection !== null) {
+            $this->db = $connection;
+            return;
+        }
+
+        require_once __DIR__ . '/../Core/Database.php';
+        $this->db = Database::getConnection();
     }
 
     /**
