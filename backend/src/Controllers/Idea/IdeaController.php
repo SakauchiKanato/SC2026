@@ -2,8 +2,15 @@
 // アイデア入力・アイデア閲覧に対応するコントローラー
 // レスポンス／エラーの形はfrontend側（src/api/client.js）の実装に合わせている
 // （成功時はdataをそのまま返す、エラー時は{ message: string }を返す）
+//
+// 「街タネ」UIでは、発案者が特定の地域ページ（/areas/{areaId}）から
+// アイデア一覧・登録に進むため、すべて地域に紐づくエンドポイントになっている。
+//   GET  /api/areas/{areaId}/ideas       -> index($areaId)  新着／過去のアイデア一覧
+//   POST /api/areas/{areaId}/ideas       -> store($areaId)  アイデア登録（ログイン必須）
+//   GET  /api/ideas/{id}                 -> show($id)       アイデア詳細
 
 require_once __DIR__ . '/../../Models/Idea.php';
+require_once __DIR__ . '/../../Models/Area.php';
 require_once __DIR__ . '/../../Core/AuthMiddleware.php';
 
 class IdeaController
@@ -12,16 +19,20 @@ class IdeaController
     private const MAX_CONTENT_LENGTH = 1000;
     private const MAX_REASON_LENGTH = 1000;
 
-    // GET /api/ideas?area_name=...&status=... … アイデア一覧（アイデア閲覧）
-    public function index(): void
+    // GET /api/areas/{areaId}/ideas?status=... … 地域ごとのアイデア一覧（新着／過去のアイデア）
+    public function index(int $areaId): void
     {
         try {
+            if (!(new Area())->exists($areaId)) {
+                self::jsonResponse(404, ['message' => '指定された地域が見つかりません']);
+                return;
+            }
+
             $filters = [
-                'area_name' => $_GET['area_name'] ?? null,
-                'status'    => $_GET['status'] ?? null,
+                'status' => $_GET['status'] ?? null,
             ];
 
-            $ideas = Idea::all($filters);
+            $ideas = Idea::allForArea($areaId, $filters);
             self::jsonResponse(200, $ideas);
         } catch (Throwable $e) {
             self::jsonResponse(500, ['message' => $e->getMessage()]);
@@ -45,14 +56,19 @@ class IdeaController
         }
     }
 
-    // POST /api/ideas … アイデア登録（アイデア入力）
+    // POST /api/areas/{areaId}/ideas … アイデア登録（アイデア入力）
     // 認証: ログイン中のユーザーIDはAuthMiddleware::requireUserId()経由で
     //       Authorizationヘッダー（JWT）から取得する。トークンが無い/不正な
     //       場合はAuthMiddleware側で401を返して処理を終了する（ログイン必須）。
-    public function store(): void
+    public function store(int $areaId): void
     {
         // トークンが無い/不正な場合はAuthMiddleware内で401を返してexitする
         $userId = AuthMiddleware::requireUserId();
+
+        if (!(new Area())->exists($areaId)) {
+            self::jsonResponse(404, ['message' => '指定された地域が見つかりません']);
+            return;
+        }
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
@@ -68,7 +84,7 @@ class IdeaController
 
         try {
             $id = Idea::create([
-                'area_name' => trim($input['area_name']),
+                'area_id'   => $areaId,
                 'title'     => trim($input['title']),
                 'status'    => $input['status'],
                 'content'   => trim($input['content']),
@@ -93,11 +109,6 @@ class IdeaController
             $errors[] = 'タイトルを入力してください';
         } elseif (mb_strlen($title) > self::MAX_TITLE_LENGTH) {
             $errors[] = 'タイトルは' . self::MAX_TITLE_LENGTH . '文字以内で入力してください';
-        }
-
-        $areaName = trim((string) ($input['area_name'] ?? ''));
-        if ($areaName === '') {
-            $errors[] = '地域名を入力してください';
         }
 
         $status = $input['status'] ?? '';

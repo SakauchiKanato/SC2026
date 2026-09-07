@@ -51,9 +51,10 @@ if ($path === '/health') {
 
 // ルーティング定義：[HTTPメソッド, パスのパターン, コントローラー, メソッド名]
 $routes = [
-    ['GET',    '#^/ideas$#',       'IdeaController', 'index'],
-    ['GET',    '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
-    ['POST',   '#^/ideas$#',       'IdeaController', 'store'],
+    // アイデアは「街タネ」UIでは特定の地域に紐づく（発案者が地域ページから登録に進むため）
+    ['GET',    '#^/areas/(\d+)/ideas$#', 'IdeaController', 'index'],
+    ['POST',   '#^/areas/(\d+)/ideas$#', 'IdeaController', 'store'],
+    ['GET',    '#^/ideas/(\d+)$#',       'IdeaController', 'show'],
 
     ['GET',    '#^/areas$#',        'AreaController', 'index'],
     ['GET',    '#^/areas/(\d+)$#',  'AreaController', 'show'],

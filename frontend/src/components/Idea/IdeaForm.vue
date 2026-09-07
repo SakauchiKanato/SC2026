@@ -9,7 +9,6 @@ const emit = defineEmits(['submit'])
 
 const form = reactive({
   title: '',
-  areaName: '',
   status: 'success',
   content: '',
   reason: '',
@@ -17,7 +16,6 @@ const form = reactive({
 
 const errors = reactive({
   title: '',
-  areaName: '',
   content: '',
   reason: '',
 })
@@ -28,8 +26,6 @@ function validate() {
       ? `タイトルは${MAX_TITLE_LENGTH}文字以内で入力してください`
       : ''
     : 'タイトルを入力してください'
-
-  errors.areaName = form.areaName.trim() ? '' : '地域名を入力してください'
 
   errors.content = form.content.trim()
     ? form.content.length > MAX_CONTENT_LENGTH
@@ -43,7 +39,7 @@ function validate() {
       : ''
     : '理由を入力してください'
 
-  return !errors.title && !errors.areaName && !errors.content && !errors.reason
+  return !errors.title && !errors.content && !errors.reason
 }
 
 function handleSubmit() {
@@ -53,12 +49,10 @@ function handleSubmit() {
 
 function resetForm() {
   form.title = ''
-  form.areaName = ''
   form.status = 'success'
   form.content = ''
   form.reason = ''
   errors.title = ''
-  errors.areaName = ''
   errors.content = ''
   errors.reason = ''
 }
@@ -79,18 +73,6 @@ defineExpose({ resetForm })
         :aria-invalid="Boolean(errors.title)"
       />
       <p v-if="errors.title" class="idea-form__error" role="alert">{{ errors.title }}</p>
-    </div>
-
-    <div class="idea-form__field">
-      <label for="idea-area">地域名</label>
-      <input
-        id="idea-area"
-        v-model="form.areaName"
-        type="text"
-        placeholder="例）長野県〇〇村"
-        :aria-invalid="Boolean(errors.areaName)"
-      />
-      <p v-if="errors.areaName" class="idea-form__error" role="alert">{{ errors.areaName }}</p>
     </div>
 
     <div class="idea-form__field">

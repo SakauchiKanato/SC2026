@@ -46,7 +46,9 @@ class Area
     public function all(): array
     {
         $stmt = $this->db->query(
-            'SELECT id, user_id, name, features, latitude, longitude, address, created_at, updated_at
+            'SELECT id, user_id, name, features, latitude, longitude, address,
+                    challenges, expected_future, created_at, updated_at,
+                    (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
              FROM ' . self::TABLE . '
              ORDER BY created_at DESC'
         );
@@ -74,7 +76,9 @@ class Area
     public function find(int $id): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT id, user_id, name, features, latitude, longitude, address, created_at, updated_at
+            'SELECT id, user_id, name, features, latitude, longitude, address,
+                    challenges, expected_future, created_at, updated_at,
+                    (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
              FROM ' . self::TABLE . '
              WHERE id = :id'
         );
@@ -104,8 +108,8 @@ class Area
         //       INSERT文にRETURNING idを付けて直接IDを取得している
         $stmt = $this->db->prepare(
             'INSERT INTO ' . self::TABLE . '
-             (user_id, name, features, latitude, longitude, address, created_at, updated_at)
-             VALUES (:user_id, :name, :features, :latitude, :longitude, :address, NOW(), NOW())
+             (user_id, name, features, latitude, longitude, address, challenges, expected_future, created_at, updated_at)
+             VALUES (:user_id, :name, :features, :latitude, :longitude, :address, :challenges, :expected_future, NOW(), NOW())
              RETURNING id'
         );
 
@@ -116,6 +120,8 @@ class Area
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'address' => $data['address'] ?? null,
+            'challenges' => $data['challenges'] ?? null,
+            'expected_future' => $data['expected_future'] ?? null,
         ]);
 
         return (int) $stmt->fetchColumn();
@@ -135,7 +141,9 @@ class Area
                  features = :features,
                  latitude = :latitude,
                  longitude = :longitude,
-                 address = :address
+                 address = :address,
+                 challenges = :challenges,
+                 expected_future = :expected_future
              WHERE id = :id'
         );
 
@@ -146,6 +154,8 @@ class Area
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'address' => $data['address'] ?? null,
+            'challenges' => $data['challenges'] ?? null,
+            'expected_future' => $data['expected_future'] ?? null,
         ]);
     }
 

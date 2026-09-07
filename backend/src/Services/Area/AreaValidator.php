@@ -48,6 +48,8 @@ class AreaValidator
     private const MAX_ADDRESS_LENGTH = 255;
     private const MAX_TAG_NAME_LENGTH = 50;
     private const MAX_TAG_COUNT = 10;
+    private const MAX_CHALLENGES_LENGTH = 2000;
+    private const MAX_EXPECTED_FUTURE_LENGTH = 2000;
 
     /**
      * 入力値をバリデーションし、正規化済みのデータを返す
@@ -78,6 +80,21 @@ class AreaValidator
         }
 
         $tagNames = $this->validateTags($input['tags'] ?? [], $errors);
+
+        // 課題点・問題点／期待する未来：地域登録フォーム（街タネUI）の必須項目
+        $challenges = trim((string)($input['challenges'] ?? ''));
+        if ($challenges === '') {
+            $errors['challenges'] = '課題点・問題点は必須です';
+        } elseif (mb_strlen($challenges) > self::MAX_CHALLENGES_LENGTH) {
+            $errors['challenges'] = '課題点・問題点は' . self::MAX_CHALLENGES_LENGTH . '文字以内で入力してください';
+        }
+
+        $expectedFuture = trim((string)($input['expected_future'] ?? ''));
+        if ($expectedFuture === '') {
+            $errors['expected_future'] = '期待する未来は必須です';
+        } elseif (mb_strlen($expectedFuture) > self::MAX_EXPECTED_FUTURE_LENGTH) {
+            $errors['expected_future'] = '期待する未来は' . self::MAX_EXPECTED_FUTURE_LENGTH . '文字以内で入力してください';
+        }
 
         $latitude = null;
         if (isset($input['latitude']) && $input['latitude'] !== '' && $input['latitude'] !== null) {
@@ -114,6 +131,8 @@ class AreaValidator
             'longitude' => $longitude,
             'address' => $address,
             'tags' => $tagNames,
+            'challenges' => $challenges,
+            'expected_future' => $expectedFuture,
         ];
     }
 

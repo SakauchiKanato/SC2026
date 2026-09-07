@@ -1,30 +1,49 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import '../../assets/idea-theme.css'
 import IdeaForm from '../../components/Idea/IdeaForm.vue'
 import { useIdeaStore } from '../../store/idea'
+import { fetchArea } from '@/api/area'
+
+const props = defineProps({
+  areaId: {
+    type: [String, Number],
+    required: true,
+  },
+})
 
 const { errorMessage, registerIdea } = useIdeaStore()
+
+const area = ref(null)
+const loadError = ref('')
 
 const formRef = ref(null)
 const isSubmitting = ref(false)
 const successMessage = ref('')
 
+async function loadArea() {
+  try {
+    area.value = await fetchArea(props.areaId)
+  } catch (error) {
+    loadError.value = '地域データの取得に失敗しました'
+  }
+}
+
 async function handleSubmit(payload) {
   isSubmitting.value = true
   successMessage.value = ''
   try {
-    await registerIdea(payload)
+    await registerIdea(props.areaId, payload)
     successMessage.value = 'アイデアを登録しました。'
     formRef.value?.resetForm()
-    // NOTE: 一覧画面へのrouteが定義され次第、ここでrouter.push()して
-    //       一覧画面へ遷移させる想定（現時点ではrouter未設定のため未実装）。
   } catch {
     // エラー内容はstoreのerrorMessageで表示するため、ここでは何もしない
   } finally {
     isSubmitting.value = false
   }
 }
+
+onMounted(loadArea)
 </script>
 
 <template>
@@ -32,11 +51,13 @@ async function handleSubmit(payload) {
     <header class="idea-page-header">
       <h1>アイデアを登録する</h1>
       <p class="idea-page-description">
-        取り組んだ地域活性化のアイデアと、成功・失敗につながった理由を記録してください。
+        <template v-if="area">{{ area.name }}に向けて、</template>
+        取り組みたい地域活性化のアイデアと、成功・失敗につながった理由を記録してください。
         似た土地で挑戦する人の道しるべになります。
       </p>
     </header>
 
+    <p v-if="loadError" class="idea-banner idea-banner--error">{{ loadError }}</p>
     <p v-if="successMessage" class="idea-banner idea-banner--success" role="status">
       {{ successMessage }}
     </p>

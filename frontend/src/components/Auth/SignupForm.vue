@@ -6,6 +6,15 @@ const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 72 // bcryptの仕様上72バイトを超える部分は無視されるため(backendと合わせる)
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const props = defineProps({
+  // 発案者ログイン/企業・自治体ログインどちらの画面から新規登録に来たかに応じて、
+  // アカウント種別ラジオボタンの初期値を切り替える（街タネUI）
+  defaultRole: {
+    type: String,
+    default: 'user',
+  },
+})
+
 const emit = defineEmits(['submit'])
 
 const form = reactive({
@@ -13,7 +22,7 @@ const form = reactive({
   email: '',
   password: '',
   passwordConfirmation: '',
-  role: 'user', // 'user'=発案者, 'company'=地域活性化を検討する企業（usersテーブルのrole列と対応）
+  role: props.defaultRole === 'company' ? 'company' : 'user', // 'user'=発案者, 'company'=地域活性化を検討する企業（usersテーブルのrole列と対応）
 })
 
 const errors = reactive({

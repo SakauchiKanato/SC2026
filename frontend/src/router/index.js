@@ -9,7 +9,18 @@ import areaRoutes from './area.routes'
 const routes = [
   { path: '/', name: 'home', component: HomeView },
   // guestOnly: ログイン済みのユーザーがログイン/サインアップ画面を開いたらホームへ流す
-  { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
+  {
+    path: '/login/proposer',
+    name: 'login-proposer',
+    component: LoginView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/login/company',
+    name: 'login-company',
+    component: LoginView,
+    meta: { guestOnly: true },
+  },
   { path: '/signup', name: 'signup', component: SignupView, meta: { guestOnly: true } },
   ...ideaRoutes,
   ...areaRoutes,
@@ -29,11 +40,10 @@ router.beforeEach((to) => {
     return { name: 'home' }
   }
 
-  // 書き込み系の画面（アイデア・地域の新規登録／編集）はログイン必須。
-  // 未ログインのままアクセスされた場合はログイン画面へ流し、
-  // ログイン後に元の画面へ戻れるようredirectをクエリに残す。
+  // 書き込み・閲覧系の画面はログイン必須。未ログインでのアクセスは
+  // トップページ（発案者/企業・自治体のログイン選択画面）へ戻す。
   if (to.meta.requiresAuth && !isAuthenticated.value) {
-    return { name: 'login', query: { redirect: to.fullPath } }
+    return { name: 'home' }
   }
 
   return true
