@@ -1,15 +1,19 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import LoginForm from '../../components/Auth/LoginForm.vue'
 import { useAuthStore } from '../../store/auth'
 
 const router = useRouter()
+const route = useRoute()
 const { errorMessage, isLoading, login } = useAuthStore()
 
 async function handleSubmit(payload) {
   try {
     await login(payload)
-    router.push({ name: 'home' })
+    // requiresAuthなページへの未ログインアクセスからここに流れてきた場合は、
+    // ログイン後に元居た画面へ戻す（router/index.jsのredirectクエリ参照）
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
+    router.push(redirect ?? { name: 'home' })
   } catch {
     // エラー内容はstoreのerrorMessageで表示するため、ここでは何もしない
   }

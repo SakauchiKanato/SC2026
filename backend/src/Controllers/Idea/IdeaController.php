@@ -4,6 +4,7 @@
 // （成功時はdataをそのまま返す、エラー時は{ message: string }を返す）
 
 require_once __DIR__ . '/../../Models/Idea.php';
+require_once __DIR__ . '/../../Core/AuthMiddleware.php';
 
 class IdeaController
 {
@@ -45,8 +46,14 @@ class IdeaController
     }
 
     // POST /api/ideas … アイデア登録（アイデア入力）
+    // 認証: ログイン中のユーザーIDはAuthMiddleware::requireUserId()経由で
+    //       Authorizationヘッダー（JWT）から取得する。トークンが無い/不正な
+    //       場合はAuthMiddleware側で401を返して処理を終了する（ログイン必須）。
     public function store(): void
     {
+        // トークンが無い/不正な場合はAuthMiddleware内で401を返してexitする
+        $userId = AuthMiddleware::requireUserId();
+
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $errors = self::validate($input);
@@ -60,15 +67,13 @@ class IdeaController
         }
 
         try {
-            // TODO(SECURITY): user_idはリクエストから受け取らない。frontendも送ってこない。
-            // ログイン機能実装後は認証トークン（セッション等）から取得してここに渡すこと。
             $id = Idea::create([
                 'area_name' => trim($input['area_name']),
                 'title'     => trim($input['title']),
                 'status'    => $input['status'],
                 'content'   => trim($input['content']),
                 'reason'    => trim($input['reason']),
-                'user_id'   => null,
+                'user_id'   => $userId,
             ]);
 
             $idea = Idea::find($id);
