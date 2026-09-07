@@ -27,7 +27,7 @@ class FeatureTag
         }
 
         require_once __DIR__ . '/../Core/Database.php';
-        $this->db = Database::getConnection();
+        $this->db = Database::getPdoConnection();
     }
 
     /**
