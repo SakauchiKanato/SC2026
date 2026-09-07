@@ -15,5 +15,6 @@ export default [
     path: '/ideas/new',
     name: 'idea-new',
     component: () => import('../views/Idea/IdeaFormView.vue'),
+    meta: { requiresAuth: true },
   },
 ]

@@ -19,11 +19,13 @@ export default [
     path: '/areas/new',
     name: 'area-new',
     component: () => import('@/views/Area/AreaFormView.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/areas/:id/edit',
     name: 'area-edit',
     component: () => import('@/views/Area/AreaFormView.vue'),
     props: true,
+    meta: { requiresAuth: true },
   },
 ];

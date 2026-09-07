@@ -29,6 +29,13 @@ router.beforeEach((to) => {
     return { name: 'home' }
   }
 
+  // 書き込み系の画面（アイデア・地域の新規登録／編集）はログイン必須。
+  // 未ログインのままアクセスされた場合はログイン画面へ流し、
+  // ログイン後に元の画面へ戻れるようredirectをクエリに残す。
+  if (to.meta.requiresAuth && !isAuthenticated.value) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
   return true
 })
 
