@@ -22,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../src/Controllers/Idea/IdeaController.php';
+require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
 require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
-// TODO: 他の担当者が実装したら以下も追加する
-// require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
+// TODO: Company機能がmainにマージされたら追加する
 // require_once __DIR__ . '/../src/Controllers/Company/CompanyController.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -55,13 +55,18 @@ $routes = [
     ['GET',    '#^/ideas/(\d+)$#', 'IdeaController', 'show'],
     ['POST',   '#^/ideas$#',       'IdeaController', 'store'],
 
+    ['GET',    '#^/areas$#',        'AreaController', 'index'],
+    ['GET',    '#^/areas/(\d+)$#',  'AreaController', 'show'],
+    ['POST',   '#^/areas$#',        'AreaController', 'store'],
+    ['PUT',    '#^/areas/(\d+)$#',  'AreaController', 'update'],
+    ['DELETE', '#^/areas/(\d+)$#',  'AreaController', 'destroy'],
+    ['GET',    '#^/feature-tags$#', 'AreaController', 'tags'],
+
     ['POST', '#^/signup$#', 'AuthController', 'signup'],
     ['POST', '#^/login$#',  'AuthController', 'login'],
     ['GET',  '#^/me$#',     'AuthController', 'me'],
 
-    // TODO: 他の担当者が実装したらここにルートを追加する
-    // ['GET',  '#^/areas$#',    'AreaController', 'index'],
-    // ['POST', '#^/areas$#',    'AreaController', 'store'],
+    // TODO: Company機能がmainにマージされたらここにルートを追加する
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controllerName, $action]) {
