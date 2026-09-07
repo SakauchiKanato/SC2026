@@ -76,18 +76,18 @@ defineExpose({ resetForm })
     </div>
 
     <div class="idea-form__field">
-      <span class="idea-form__label">結果</span>
-      <div class="idea-form__status-options">
-        <label class="idea-form__status-option">
-          <input v-model="form.status" type="radio" name="idea-status" value="success" />
-          成功
-        </label>
-        <label class="idea-form__status-option">
-          <input v-model="form.status" type="radio" name="idea-status" value="failure" />
-          失敗
-        </label>
-      </div>
+      <label for="idea-area">地域名</label>
+      <input
+        id="idea-area"
+        v-model="form.areaName"
+        type="text"
+        placeholder="例）長野県〇〇村"
+        :aria-invalid="Boolean(errors.areaName)"
+      />
+      <p v-if="errors.areaName" class="idea-form__error" role="alert">{{ errors.areaName }}</p>
     </div>
+
+    
 
     <div class="idea-form__field">
       <label for="idea-content">アイデアの内容</label>
