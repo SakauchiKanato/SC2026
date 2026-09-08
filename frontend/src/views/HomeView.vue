@@ -38,7 +38,10 @@ async function loadAreas() {
   isLoading.value = true
   loadError.value = ''
   try {
-    areas.value = await fetchAreas()
+    // APIが予期しないレスポンス（Content-Typeがapplication/json以外等）を返した場合、
+    // fetchAreas()がnullを返すことがある。その場合でもdisplayedAreasのfilter()で
+    // 例外にならないよう、必ず配列にフォールバックする。
+    areas.value = (await fetchAreas()) ?? []
   } catch (error) {
     loadError.value = '地域一覧の取得に失敗しました'
   } finally {
