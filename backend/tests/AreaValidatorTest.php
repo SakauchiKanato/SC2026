@@ -170,6 +170,67 @@ try {
     assertTrue(isset($e->getErrors()['expected_future']), 'expected_futureのエラーが含まれる');
 }
 
+echo "\n正常系: ライフスタイルデータ未入力時はすべてnullになる\n";
+$result = $validator->validate([
+    'name' => '〇〇地区',
+    'challenges' => '課題',
+    'expected_future' => '未来',
+]);
+assertEquals(null, $result['population'], 'population未入力時はnullになる');
+assertEquals(null, $result['day_night_population_ratio'], 'day_night_population_ratio未入力時はnullになる');
+assertEquals(null, $result['average_age'], 'average_age未入力時はnullになる');
+assertEquals(null, $result['main_industry'], 'main_industry未入力時はnullになる');
+assertEquals(null, $result['transit_access'], 'transit_access未入力時はnullになる');
+
+echo "\n正常系: ライフスタイルデータ全項目入力（地域登録フォームPDFのサンプル値）\n";
+$result = $validator->validate([
+    'name' => '〇〇地区',
+    'address' => '東京都渋谷区宇田川町1-1',
+    'population' => '約22.6万人',
+    'day_night_population_ratio' => '約230%',
+    'average_age' => '38.4歳',
+    'main_industry' => '商業・サービス業 / IT',
+    'transit_access' => 'JR山手線・私鉄5路線が乗り入れる広域ターミナル',
+    'challenges' => '課題',
+    'expected_future' => '未来',
+]);
+assertEquals('東京都渋谷区宇田川町1-1', $result['address'], 'addressが保存される');
+assertEquals('約22.6万人', $result['population'], 'populationが保存される');
+assertEquals('約230%', $result['day_night_population_ratio'], 'day_night_population_ratioが保存される');
+assertEquals('38.4歳', $result['average_age'], 'average_ageが保存される');
+assertEquals('商業・サービス業 / IT', $result['main_industry'], 'main_industryが保存される');
+assertEquals(
+    'JR山手線・私鉄5路線が乗り入れる広域ターミナル',
+    $result['transit_access'],
+    'transit_accessが保存される'
+);
+
+echo "\n異常系: population（人口）が最大文字数(255文字)を超える\n";
+try {
+    $validator->validate([
+        'name' => '〇〇地区',
+        'population' => str_repeat('あ', 256),
+        'challenges' => '課題',
+        'expected_future' => '未来',
+    ]);
+    assertTrue(false, '例外が投げられるべき');
+} catch (AreaValidationException $e) {
+    assertTrue(isset($e->getErrors()['population']), 'population文字数超過のエラーが含まれる');
+}
+
+echo "\n異常系: transit_access（交通アクセス）が最大文字数(255文字)を超える\n";
+try {
+    $validator->validate([
+        'name' => '〇〇地区',
+        'transit_access' => str_repeat('あ', 256),
+        'challenges' => '課題',
+        'expected_future' => '未来',
+    ]);
+    assertTrue(false, '例外が投げられるべき');
+} catch (AreaValidationException $e) {
+    assertTrue(isset($e->getErrors()['transit_access']), 'transit_access文字数超過のエラーが含まれる');
+}
+
 echo "\n--------------------------------\n";
 echo "結果: {$passCount} PASS / {$failureCount} FAIL\n";
 

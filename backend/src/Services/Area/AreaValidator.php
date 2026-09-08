@@ -46,6 +46,10 @@ class AreaValidator
 
     private const MAX_NAME_LENGTH = 255;
     private const MAX_ADDRESS_LENGTH = 255;
+    // ライフスタイルデータ（人口・昼夜人口比率・平均年齢・主要産業・交通アクセス）は
+    // 「分かる範囲で構いません」（地域登録フォームPDF記載）の任意項目・フリーテキストのため、
+    // addressと同じ上限文字数にしている
+    private const MAX_LIFESTYLE_FIELD_LENGTH = 255;
     private const MAX_TAG_NAME_LENGTH = 50;
     private const MAX_TAG_COUNT = 10;
     private const MAX_CHALLENGES_LENGTH = 2000;
@@ -78,6 +82,22 @@ class AreaValidator
         if ($address !== null && mb_strlen($address) > self::MAX_ADDRESS_LENGTH) {
             $errors['address'] = '住所は' . self::MAX_ADDRESS_LENGTH . '文字以内で入力してください';
         }
+
+        $population = $this->validateLifestyleField($input['population'] ?? '', 'population', '人口', $errors);
+        $dayNightPopulationRatio = $this->validateLifestyleField(
+            $input['day_night_population_ratio'] ?? '',
+            'day_night_population_ratio',
+            '昼夜人口比率',
+            $errors
+        );
+        $averageAge = $this->validateLifestyleField($input['average_age'] ?? '', 'average_age', '平均年齢', $errors);
+        $mainIndustry = $this->validateLifestyleField($input['main_industry'] ?? '', 'main_industry', '主要産業', $errors);
+        $transitAccess = $this->validateLifestyleField(
+            $input['transit_access'] ?? '',
+            'transit_access',
+            '交通アクセス',
+            $errors
+        );
 
         $tagNames = $this->validateTags($input['tags'] ?? [], $errors);
 
@@ -130,10 +150,36 @@ class AreaValidator
             'latitude' => $latitude,
             'longitude' => $longitude,
             'address' => $address,
+            'population' => $population,
+            'day_night_population_ratio' => $dayNightPopulationRatio,
+            'average_age' => $averageAge,
+            'main_industry' => $mainIndustry,
+            'transit_access' => $transitAccess,
             'tags' => $tagNames,
             'challenges' => $challenges,
             'expected_future' => $expectedFuture,
         ];
+    }
+
+    /**
+     * ライフスタイルデータの各項目（人口・昼夜人口比率・平均年齢・主要産業・交通アクセス）は
+     * すべて任意項目・フリーテキストのため、共通の空文字→null変換・文字数チェックのみ行う。
+     *
+     * @param mixed $rawValue
+     * @param array<string, string> $errors
+     */
+    private function validateLifestyleField($rawValue, string $field, string $label, array &$errors): ?string
+    {
+        $value = trim((string) $rawValue);
+        if ($value === '') {
+            return null;
+        }
+
+        if (mb_strlen($value) > self::MAX_LIFESTYLE_FIELD_LENGTH) {
+            $errors[$field] = $label . 'は' . self::MAX_LIFESTYLE_FIELD_LENGTH . '文字以内で入力してください';
+        }
+
+        return $value;
     }
 
     /**

@@ -47,6 +47,8 @@ class Area
     {
         $stmt = $this->db->query(
             'SELECT id, user_id, name, features, latitude, longitude, address,
+                    population, day_night_population_ratio, average_age,
+                    main_industry, transit_access,
                     challenges, expected_future, created_at, updated_at,
                     (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
              FROM ' . self::TABLE . '
@@ -77,6 +79,8 @@ class Area
     {
         $stmt = $this->db->prepare(
             'SELECT id, user_id, name, features, latitude, longitude, address,
+                    population, day_night_population_ratio, average_age,
+                    main_industry, transit_access,
                     challenges, expected_future, created_at, updated_at,
                     (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
              FROM ' . self::TABLE . '
@@ -108,8 +112,12 @@ class Area
         //       INSERT文にRETURNING idを付けて直接IDを取得している
         $stmt = $this->db->prepare(
             'INSERT INTO ' . self::TABLE . '
-             (user_id, name, features, latitude, longitude, address, challenges, expected_future, created_at, updated_at)
-             VALUES (:user_id, :name, :features, :latitude, :longitude, :address, :challenges, :expected_future, NOW(), NOW())
+             (user_id, name, features, latitude, longitude, address,
+              population, day_night_population_ratio, average_age, main_industry, transit_access,
+              challenges, expected_future, created_at, updated_at)
+             VALUES (:user_id, :name, :features, :latitude, :longitude, :address,
+                     :population, :day_night_population_ratio, :average_age, :main_industry, :transit_access,
+                     :challenges, :expected_future, NOW(), NOW())
              RETURNING id'
         );
 
@@ -120,6 +128,11 @@ class Area
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'address' => $data['address'] ?? null,
+            'population' => $data['population'] ?? null,
+            'day_night_population_ratio' => $data['day_night_population_ratio'] ?? null,
+            'average_age' => $data['average_age'] ?? null,
+            'main_industry' => $data['main_industry'] ?? null,
+            'transit_access' => $data['transit_access'] ?? null,
             'challenges' => $data['challenges'] ?? null,
             'expected_future' => $data['expected_future'] ?? null,
         ]);
@@ -142,6 +155,11 @@ class Area
                  latitude = :latitude,
                  longitude = :longitude,
                  address = :address,
+                 population = :population,
+                 day_night_population_ratio = :day_night_population_ratio,
+                 average_age = :average_age,
+                 main_industry = :main_industry,
+                 transit_access = :transit_access,
                  challenges = :challenges,
                  expected_future = :expected_future
              WHERE id = :id'
@@ -154,6 +172,11 @@ class Area
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'address' => $data['address'] ?? null,
+            'population' => $data['population'] ?? null,
+            'day_night_population_ratio' => $data['day_night_population_ratio'] ?? null,
+            'average_age' => $data['average_age'] ?? null,
+            'main_industry' => $data['main_industry'] ?? null,
+            'transit_access' => $data['transit_access'] ?? null,
             'challenges' => $data['challenges'] ?? null,
             'expected_future' => $data['expected_future'] ?? null,
         ]);

@@ -12,7 +12,30 @@
 #   正しい画面を描画する。
 #
 # 注意:
-#   FallbackResourceのパスは「このアプリが実際に配信されるURLパス」を
-#   ハードコードする必要がある（サブフォルダ配信のため自動検出できない）。
-#   デプロイ先を変える場合はここも合わせて変更すること。
+#   ハードコードしているパス（/~knt416/SC2026/）は「このアプリが実際に
+#   配信されるURLパス」。デプロイ先を変える場合はここも合わせて変更すること。
+#
+# 2026-09-08 追記（本番QA報告）:
+#   下のFallbackResourceディレクティブはコード上は以前から存在していたが、
+#   本番サーバー（gms.gdl.jp）ではなぜか効いておらず、/areas 等への直接アクセス・
+#   リロードが素の404のままになる不具合が本番で確認された。
+#   原因はサーバー側のAllowOverride設定等の可能性があるが、こちらからは
+#   本番サーバーに直接ログインして確認する手段が無いため、まずは
+#   mod_rewriteベースの同等の設定を「あわせて」追加し、どちらか一方でも
+#   動けば直るようにしている（両方とも効かない場合は、根本的にサーバー側の
+#   設定を管理者に確認してもらう必要がある。その場合はvue-routerを
+#   hashモードに切り替える方法もある）。
 FallbackResource /~knt416/SC2026/index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /~knt416/SC2026/
+
+  # 実在するファイル・ディレクトリへのリクエストはそのまま配信する
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # それ以外はすべてindex.htmlにフォールバックし、vue-router側でURLを解釈させる
+  RewriteRule ^ index.html [L]
+</IfModule>

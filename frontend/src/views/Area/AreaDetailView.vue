@@ -3,8 +3,7 @@
   発案者（＝その地域の登録者ではないユーザー）が見る場合は閲覧のみ＋
   「アイデア登録はこちらから→」導線（PDF5/7枚目）。
   地域の登録者本人（企業・自治体側であることが多い想定）が見る場合は、
-  「課題点・問題点」「期待する未来」を編集できる（PDF8枚目）。
-  ※「ライフスタイルデータ」はまだ実データの持ち先が無いため、準備中のプレースホルダー表示。
+  「ライフスタイルデータ」「課題点・問題点」「期待する未来」を編集できる（PDF8/9枚目）。
 -->
 <template>
   <section class="mt-page area-detail-view">
@@ -15,11 +14,77 @@
       <h1 class="mt-page__title">{{ area.name }}の特色</h1>
 
       <p class="mt-section-label">ライフスタイルデータ</p>
-      <div class="mt-box mt-box--placeholder">データは準備中です</div>
-
-      <p class="mt-section-label">企業・自治体が実現したいこと</p>
 
       <form v-if="isOwner" @submit.prevent="handleSave">
+        <div class="mt-form-field">
+          <label for="edit-address">住所</label>
+          <input
+            id="edit-address"
+            v-model="editForm.address"
+            type="text"
+            maxlength="255"
+            placeholder="例：東京都渋谷区宇田川町1-1"
+          />
+        </div>
+
+        <div class="mt-form-row">
+          <div class="mt-form-field">
+            <label for="edit-population">人口</label>
+            <input
+              id="edit-population"
+              v-model="editForm.population"
+              type="text"
+              maxlength="255"
+              placeholder="例：約22.6万人"
+            />
+          </div>
+          <div class="mt-form-field">
+            <label for="edit-day-night-population-ratio">昼夜人口比率</label>
+            <input
+              id="edit-day-night-population-ratio"
+              v-model="editForm.dayNightPopulationRatio"
+              type="text"
+              maxlength="255"
+              placeholder="例：約230%"
+            />
+          </div>
+        </div>
+
+        <div class="mt-form-row">
+          <div class="mt-form-field">
+            <label for="edit-average-age">平均年齢</label>
+            <input
+              id="edit-average-age"
+              v-model="editForm.averageAge"
+              type="text"
+              maxlength="255"
+              placeholder="例：38.4歳"
+            />
+          </div>
+          <div class="mt-form-field">
+            <label for="edit-main-industry">主要産業</label>
+            <input
+              id="edit-main-industry"
+              v-model="editForm.mainIndustry"
+              type="text"
+              maxlength="255"
+              placeholder="例：商業・サービス業 / IT"
+            />
+          </div>
+        </div>
+
+        <div class="mt-form-field">
+          <label for="edit-transit-access">交通アクセス</label>
+          <input
+            id="edit-transit-access"
+            v-model="editForm.transitAccess"
+            type="text"
+            maxlength="255"
+            placeholder="例：JR山手線・私鉄5路線が乗り入れる広域ターミナル"
+          />
+        </div>
+
+        <p class="mt-section-label">企業・自治体が実現したいこと</p>
         <div class="mt-box-row">
           <div class="mt-box">
             <textarea v-model="editForm.challenges" placeholder="課題点・問題点"></textarea>
@@ -39,6 +104,34 @@
       </form>
 
       <template v-else>
+        <div class="mt-box-row area-detail-view__lifestyle-grid">
+          <div class="mt-box">
+            <p class="area-detail-view__lifestyle-label">住所</p>
+            <p>{{ area.address || '（未記入）' }}</p>
+          </div>
+          <div class="mt-box">
+            <p class="area-detail-view__lifestyle-label">人口</p>
+            <p>{{ area.population || '（未記入）' }}</p>
+          </div>
+          <div class="mt-box">
+            <p class="area-detail-view__lifestyle-label">昼夜人口比率</p>
+            <p>{{ area.day_night_population_ratio || '（未記入）' }}</p>
+          </div>
+          <div class="mt-box">
+            <p class="area-detail-view__lifestyle-label">平均年齢</p>
+            <p>{{ area.average_age || '（未記入）' }}</p>
+          </div>
+          <div class="mt-box">
+            <p class="area-detail-view__lifestyle-label">主要産業</p>
+            <p>{{ area.main_industry || '（未記入）' }}</p>
+          </div>
+          <div class="mt-box">
+            <p class="area-detail-view__lifestyle-label">交通アクセス</p>
+            <p>{{ area.transit_access || '（未記入）' }}</p>
+          </div>
+        </div>
+
+        <p class="mt-section-label">企業・自治体が実現したいこと</p>
         <div class="mt-box-row">
           <div class="mt-box">{{ area.challenges || '（未記入）' }}</div>
           <div class="mt-box">{{ area.expected_future || '（未記入）' }}</div>
@@ -76,6 +169,12 @@ const isSaving = ref(false)
 const saveError = ref('')
 
 const editForm = reactive({
+  address: '',
+  population: '',
+  dayNightPopulationRatio: '',
+  averageAge: '',
+  mainIndustry: '',
+  transitAccess: '',
   challenges: '',
   expectedFuture: '',
 })
@@ -93,6 +192,12 @@ async function loadArea() {
   loadError.value = ''
   try {
     area.value = await fetchArea(props.id)
+    editForm.address = area.value.address ?? ''
+    editForm.population = area.value.population ?? ''
+    editForm.dayNightPopulationRatio = area.value.day_night_population_ratio ?? ''
+    editForm.averageAge = area.value.average_age ?? ''
+    editForm.mainIndustry = area.value.main_industry ?? ''
+    editForm.transitAccess = area.value.transit_access ?? ''
     editForm.challenges = area.value.challenges ?? ''
     editForm.expectedFuture = area.value.expected_future ?? ''
   } catch (error) {
@@ -108,7 +213,13 @@ async function handleSave() {
 
   const payload = {
     name: area.value.name,
-    address: area.value.address,
+    address: editForm.address === '' ? null : editForm.address,
+    population: editForm.population === '' ? null : editForm.population,
+    day_night_population_ratio:
+      editForm.dayNightPopulationRatio === '' ? null : editForm.dayNightPopulationRatio,
+    average_age: editForm.averageAge === '' ? null : editForm.averageAge,
+    main_industry: editForm.mainIndustry === '' ? null : editForm.mainIndustry,
+    transit_access: editForm.transitAccess === '' ? null : editForm.transitAccess,
     challenges: editForm.challenges,
     expected_future: editForm.expectedFuture,
     tags: (area.value.tags || []).map((tag) => tag.name),
@@ -137,5 +248,20 @@ onMounted(loadArea)
   margin-top: var(--idea-spacing-md);
   display: flex;
   justify-content: flex-end;
+}
+
+.area-detail-view__lifestyle-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 640px) {
+  .area-detail-view__lifestyle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.area-detail-view__lifestyle-label {
+  font-weight: 700;
+  margin: 0 0 4px;
 }
 </style>
