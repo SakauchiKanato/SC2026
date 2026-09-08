@@ -96,18 +96,38 @@
           />
           <p v-if="errors.transit_access" class="mt-form-field__error">{{ errors.transit_access }}</p>
         </div>
+
+        <div class="mt-form-field">
+          <label for="other">その他</label>
+          <textarea
+            id="other"
+            v-model="form.other"
+            rows="3"
+            maxlength="1000"
+            placeholder="その他、地域の特色があれば記入してください"
+          ></textarea>
+          <p v-if="errors.other" class="mt-form-field__error">{{ errors.other }}</p>
+        </div>
       </div>
 
-      <div class="mt-form-field">
-        <label for="challenges">課題点・問題点</label>
-        <textarea id="challenges" v-model="form.challenges" rows="4" required></textarea>
-        <p v-if="errors.challenges" class="mt-form-field__error">{{ errors.challenges }}</p>
-      </div>
+      <div class="area-form-view__section">
+        <h2 class="area-form-view__section-title">企業・自治体が実現したいこと（任意）</h2>
+        <p class="idea-page-description">
+          ここで入力すると、あなたの団体からの最初の投稿として地域詳細ページに掲載されます。
+          未入力の場合は、後から地域詳細ページで追加できます。
+        </p>
 
-      <div class="mt-form-field">
-        <label for="expected_future">期待する未来</label>
-        <textarea id="expected_future" v-model="form.expectedFuture" rows="4" required></textarea>
-        <p v-if="errors.expected_future" class="mt-form-field__error">{{ errors.expected_future }}</p>
+        <div class="mt-form-field">
+          <label for="challenges">課題点・問題点</label>
+          <textarea id="challenges" v-model="form.challenges" rows="4"></textarea>
+          <p v-if="errors.challenges" class="mt-form-field__error">{{ errors.challenges }}</p>
+        </div>
+
+        <div class="mt-form-field">
+          <label for="expected_future">期待する未来</label>
+          <textarea id="expected_future" v-model="form.expectedFuture" rows="4"></textarea>
+          <p v-if="errors.expected_future" class="mt-form-field__error">{{ errors.expected_future }}</p>
+        </div>
       </div>
 
       <p v-if="submitError" class="idea-banner idea-banner--error">{{ submitError }}</p>
@@ -137,6 +157,7 @@ const form = reactive({
   averageAge: '',
   mainIndustry: '',
   transitAccess: '',
+  other: '',
   challenges: '',
   expectedFuture: '',
 })
@@ -159,6 +180,9 @@ async function handleSubmit() {
     average_age: form.averageAge === '' ? null : form.averageAge,
     main_industry: form.mainIndustry === '' ? null : form.mainIndustry,
     transit_access: form.transitAccess === '' ? null : form.transitAccess,
+    other: form.other === '' ? null : form.other,
+    // challenges/expected_futureは任意項目。両方入力されていれば、登録者自身の
+    // 最初の投稿としてarea_challenge_requestsに作成される（バックエンド側の挙動）。
     challenges: form.challenges,
     expected_future: form.expectedFuture,
   }

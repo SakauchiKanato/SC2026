@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../src/Controllers/Idea/IdeaController.php';
 require_once __DIR__ . '/../src/Controllers/Area/AreaController.php';
+require_once __DIR__ . '/../src/Controllers/Area/AreaChallengeController.php';
 require_once __DIR__ . '/../src/Controllers/Auth/AuthController.php';
 // TODO: Company機能がmainにマージされたら追加する
 // require_once __DIR__ . '/../src/Controllers/Company/CompanyController.php';
@@ -65,6 +66,13 @@ $routes = [
     ['PUT',    '#^/areas/(\d+)$#',  'AreaController', 'update'],
     ['DELETE', '#^/areas/(\d+)$#',  'AreaController', 'destroy'],
     ['GET',    '#^/feature-tags$#', 'AreaController', 'tags'],
+
+    // 「企業・自治体が実現したいこと」（課題点・問題点／期待する未来）の掲示板。
+    // 地域を登録していない企業・自治体も投稿できる（AreaChallengeController参照）。
+    ['GET',    '#^/areas/(\d+)/challenges$#', 'AreaChallengeController', 'index'],
+    ['POST',   '#^/areas/(\d+)/challenges$#', 'AreaChallengeController', 'store'],
+    ['PUT',    '#^/challenges/(\d+)$#',       'AreaChallengeController', 'update'],
+    ['DELETE', '#^/challenges/(\d+)$#',       'AreaChallengeController', 'destroy'],
 
     ['POST', '#^/signup$#', 'AuthController', 'signup'],
     ['POST', '#^/login$#',  'AuthController', 'login'],
