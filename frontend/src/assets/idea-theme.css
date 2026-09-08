@@ -880,3 +880,67 @@ a:hover {
 .auth-view__success-cta:hover {
   color: #ffffff;
 }
+
+/* ログアウト完了ページ（LogoutView.vue） */
+.logout-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 400px;
+  margin: 80px auto 0;
+}
+
+.logout-view__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--mt-radius-pill);
+  background: var(--surface-sage-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+  stroke: var(--brand-900);
+}
+
+.logout-view__title {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+.logout-view__description {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  line-height: 1.8;
+  margin: 0 0 var(--idea-spacing-lg);
+}
+
+.logout-view__primary {
+  padding: 14px 32px;
+  border-radius: var(--mt-radius-pill);
+  background: var(--brand-700);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.logout-view__primary:hover {
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.logout-view__secondary {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.logout-view__secondary:hover {
+  color: var(--brand-900);
+}
