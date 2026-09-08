@@ -19,6 +19,12 @@
         <p v-if="errors.address" class="mt-form-field__error">{{ errors.address }}</p>
       </div>
 
+       <div class="mt-form-field">
+        <label for="address">ライフスタイルデータ</label>
+        <input id="address" v-model="form.address" type="text" maxlength="255" />
+        <p v-if="errors.address" class="mt-form-field__error">{{ errors.address }}</p>
+      </div>
+
       <div class="mt-form-field">
         <label for="challenges">課題点・問題点</label>
         <textarea id="challenges" v-model="form.challenges" rows="4" required></textarea>
