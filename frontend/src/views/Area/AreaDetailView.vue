@@ -24,7 +24,7 @@
     <p v-else-if="loadError" class="idea-banner idea-banner--error">{{ loadError }}</p>
 
     <template v-else-if="area">
-      <RouterLink :to="backLinkRoute" class="area-detail-view__back">
+      <RouterLink :to="backLinkRoute" class="mt-back-link">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path d="M19 12H5M11 18l-6-6 6-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -500,21 +500,6 @@ onMounted(loadArea)
   stroke: var(--brand-900);
   font-size: 0.78rem;
   font-weight: 700;
-}
-
-.area-detail-view__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  stroke: var(--ink-soft);
-  margin-bottom: var(--idea-spacing-md);
-}
-
-.area-detail-view__back:hover {
-  color: var(--brand-900);
 }
 
 .area-detail-view__grid {

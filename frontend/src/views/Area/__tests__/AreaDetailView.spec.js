@@ -76,7 +76,7 @@ beforeEach(() => {
 describe('AreaDetailView（非オーナー・発案者）', () => {
   it('地域一覧に戻るリンクはhomeを指す（発案者にはarea-listが無いため）', async () => {
     const { wrapper } = await setup('user')
-    expect(wrapper.get('.area-detail-view__back').attributes('href')).toBe('/')
+    expect(wrapper.get('.mt-back-link').attributes('href')).toBe('/')
   })
 
   it('初期表示はアイデア登録の案内のみで、フォームは閉じている', async () => {
@@ -110,7 +110,7 @@ describe('AreaDetailView（非オーナー・発案者）', () => {
 describe('AreaDetailView（企業・自治体、他社の地域を閲覧）', () => {
   it('地域一覧に戻るリンクはarea-listを指す', async () => {
     const { wrapper } = await setup('company')
-    expect(wrapper.get('.area-detail-view__back').attributes('href')).toBe('/areas')
+    expect(wrapper.get('.mt-back-link').attributes('href')).toBe('/areas')
   })
 
   it('アイデア登録の導線は表示しない（企業・自治体はアイデアを登録できない）', async () => {

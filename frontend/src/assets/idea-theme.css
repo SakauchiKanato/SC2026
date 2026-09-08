@@ -1040,3 +1040,19 @@ a:hover {
   margin: 0;
   font-size: 0.9rem;
 }
+
+/* 「← ◯◯に戻る」リンク（AreaDetailView.vue, AreaFormView.vueなどで共通利用） */
+.mt-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  stroke: var(--ink-soft);
+  margin-bottom: var(--idea-spacing-md);
+}
+
+.mt-back-link:hover {
+  color: var(--brand-900);
+}
