@@ -35,15 +35,11 @@ afterEach(() => {
 })
 
 describe('AreaFormView', () => {
-  it('必須項目（地域名・課題点・期待する未来）が未入力だと送信ボタンは非活性', async () => {
+  it('地域名（必須）が未入力だと送信ボタンは非活性。入力すると活性化する（他は任意項目）', async () => {
     const { wrapper } = await setup()
     expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeDefined()
 
     await wrapper.find('#name').setValue('東京都渋谷区')
-    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeDefined()
-
-    await wrapper.find('#challenges').setValue('空き店舗が増えている')
-    await wrapper.find('#expected_future').setValue('商店街に活気が戻る')
     expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
   })
 

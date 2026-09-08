@@ -12,6 +12,10 @@ vi.mock('../../../api/auth', () => ({
 vi.mock('../../../api/area', () => ({
   fetchArea: vi.fn(),
   updateArea: vi.fn(),
+  fetchAreaChallenges: vi.fn(),
+  createAreaChallenge: vi.fn(),
+  updateAreaChallenge: vi.fn(),
+  deleteAreaChallenge: vi.fn(),
 }))
 vi.mock('../../../api/idea', () => ({
   fetchIdeas: vi.fn(),
@@ -30,15 +34,24 @@ const AREA = {
   average_age: null,
   main_industry: null,
   transit_access: null,
-  challenges: '空き店舗の増加',
-  expected_future: '若者が集まる商店街の再生',
+  other: null,
   ideas_count: 0,
 }
 
 // ログイン中のユーザー(id: 10)が登録した地域（オーナー向けテスト用）
 const OWNED_AREA = { ...AREA, user_id: 10 }
 
-async function setup(role, { area = AREA } = {}) {
+// オーナー(id: 10)自身の投稿1件が既に掲示板にある状態
+const OWN_CHALLENGE_ENTRY = {
+  id: 500,
+  area_id: 1,
+  user_id: 10,
+  user_name: '渋谷区役所',
+  challenges: '若者世代の地域行事への参加率が低下している',
+  expected_future: '若者世代が日常的に地域活動へ参加する仕組みができている',
+}
+
+async function setup(role, { area = AREA, challenges = [] } = {}) {
   vi.resetModules()
   const authApi = await import('../../../api/auth')
   const areaApi = await import('../../../api/area')
@@ -46,6 +59,7 @@ async function setup(role, { area = AREA } = {}) {
   const { default: AreaDetailView } = await import('../AreaDetailView.vue')
 
   areaApi.fetchArea.mockResolvedValue(area)
+  areaApi.fetchAreaChallenges.mockResolvedValue(challenges)
   authApi.login.mockResolvedValue({
     data: { token: 'fake-jwt', user: { id: 10, name: '渋谷区役所', role } },
   })
@@ -121,13 +135,16 @@ describe('AreaDetailView（企業・自治体、他社の地域を閲覧）', ()
 
 describe('AreaDetailView（オーナー本人）', () => {
   it('初期表示は読み取り専用の確認画面（編集フォームは表示しない）', async () => {
-    const { wrapper } = await setup('company', { area: OWNED_AREA })
+    const { wrapper } = await setup('company', {
+      area: OWNED_AREA,
+      challenges: [OWN_CHALLENGE_ENTRY],
+    })
     expect(wrapper.text()).toContain('この地域の情報を編集しますか？')
     expect(wrapper.find('#edit-population').exists()).toBe(false)
     expect(wrapper.text()).toContain('渋谷区役所（あなたの団体）')
   })
 
-  it('「編集する」を押すと編集画面に切り替わり、保存すると完了表示になる', async () => {
+  it('「編集する」を押すと編集画面に切り替わり、保存すると確認画面に戻る', async () => {
     const { wrapper } = await setup('company', { area: OWNED_AREA })
     const areaApi = await import('../../../api/area')
     areaApi.updateArea.mockResolvedValue({ ...OWNED_AREA, population: '約22.6万人' })
@@ -144,21 +161,52 @@ describe('AreaDetailView（オーナー本人）', () => {
       '1',
       expect.objectContaining({ population: '約22.6万人' }),
     )
-    expect(wrapper.text()).toContain('変更を保存しました')
+    // 保存後は編集モードを抜けて確認画面に戻る（編集フォームが消える）
+    expect(wrapper.find('#edit-population').exists()).toBe(false)
+    expect(wrapper.text()).toContain('約22.6万人')
   })
 
-  it('保存後にさらに項目を変更すると、保存済み表示は消える', async () => {
-    const { wrapper } = await setup('company', { area: OWNED_AREA })
+  it('掲示板に自団体の投稿を新規追加できる', async () => {
+    const { wrapper } = await setup('company', { area: OWNED_AREA, challenges: [] })
     const areaApi = await import('../../../api/area')
-    areaApi.updateArea.mockResolvedValue(OWNED_AREA)
+    areaApi.createAreaChallenge.mockResolvedValue({
+      id: 501,
+      area_id: 1,
+      user_id: 10,
+      user_name: '渋谷区役所',
+      challenges: '空き地が目立つ',
+      expected_future: '賑わいを取り戻したい',
+    })
 
-    await wrapper.find('.area-detail-view__cta-btn').trigger('click')
-    await wrapper.find('form').trigger('submit')
+    expect(wrapper.text()).toContain('まだ投稿がありません')
+
+    await wrapper.find('.area-detail-view__add-button').trigger('click')
+    await wrapper.find('#new-entry-challenges').setValue('空き地が目立つ')
+    await wrapper.find('#new-entry-expected-future').setValue('賑わいを取り戻したい')
+    await wrapper.find('.area-detail-view__cta-btn--sm').trigger('click')
     await flushPromises()
-    expect(wrapper.text()).toContain('変更を保存しました')
 
-    await wrapper.find('#edit-population').setValue('約23万人')
-    expect(wrapper.text()).not.toContain('変更を保存しました')
-    expect(wrapper.text()).toContain('変更を保存する')
+    expect(areaApi.createAreaChallenge).toHaveBeenCalledWith('1', {
+      challenges: '空き地が目立つ',
+      expected_future: '賑わいを取り戻したい',
+    })
+    expect(wrapper.text()).toContain('賑わいを取り戻したい')
+    expect(wrapper.text()).not.toContain('まだ投稿がありません')
+  })
+
+  it('他団体の投稿には編集・削除ボタンを表示しない', async () => {
+    const otherEntry = {
+      id: 600,
+      area_id: 1,
+      user_id: 999,
+      user_name: '民間デベロッパー',
+      challenges: '遊休スペースが点在している',
+      expected_future: '賑わいが生まれている',
+    }
+    const { wrapper } = await setup('company', { area: OWNED_AREA, challenges: [otherEntry] })
+
+    expect(wrapper.text()).toContain('民間デベロッパー')
+    expect(wrapper.text()).not.toContain('（あなたの団体）')
+    expect(wrapper.find('.area-detail-view__icon-button').exists()).toBe(false)
   })
 })

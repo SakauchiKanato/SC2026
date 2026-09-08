@@ -81,12 +81,13 @@ describe('HomeView（認証後）', () => {
     expect(wrapper.text()).toContain('「存在しない地域名」に一致する地域が見つかりませんでした。')
   })
 
-  it('企業・自治体(company): 検索ボックスは表示せず、自分が登録した地域のみ表示する', async () => {
+  it('企業・自治体(company): 検索ボックスは表示せず、自団体・他団体を問わず登録されている地域を全件表示する', async () => {
     const { wrapper } = await setup('company')
 
     expect(wrapper.find('.mt-searchbox').exists()).toBe(false)
     expect(wrapper.text()).toContain('東京都渋谷区')
     expect(wrapper.text()).toContain('東京都新宿区')
-    expect(wrapper.text()).not.toContain('東京都港区') // user_id=99は他社の地域
+    // user_id=99の他団体の地域も、詳細ページの「実現したいこと」掲示板へ投稿できるため表示する
+    expect(wrapper.text()).toContain('東京都港区')
   })
 })
