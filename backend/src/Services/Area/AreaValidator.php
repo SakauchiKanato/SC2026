@@ -50,8 +50,15 @@ class AreaValidator
     // 「分かる範囲で構いません」（地域登録フォームPDF記載）の任意項目・フリーテキストのため、
     // addressと同じ上限文字数にしている
     private const MAX_LIFESTYLE_FIELD_LENGTH = 255;
+    // 「その他」欄はライフスタイルデータの他項目よりまとまった分量を書けるようにしている
+    // （地域詳細編集画面PDFの「その他、地域の特色があれば記入してください」欄）
+    private const MAX_OTHER_LENGTH = 1000;
     private const MAX_TAG_NAME_LENGTH = 50;
     private const MAX_TAG_COUNT = 10;
+    // NOTE: challenges（課題点・問題点）／expected_future（期待する未来）は、
+    // area_challenge_requestsテーブル（企業・自治体が実現したいこと掲示板）へ
+    // 移管したため、Area本体のバリデーションとしては任意項目として扱う
+    // （地域登録フォームで入力されれば、登録者の最初の投稿として作成する）。
     private const MAX_CHALLENGES_LENGTH = 2000;
     private const MAX_EXPECTED_FUTURE_LENGTH = 2000;
 
@@ -98,21 +105,19 @@ class AreaValidator
             '交通アクセス',
             $errors
         );
+        $other = $this->validateOther($input['other'] ?? '', $errors);
 
         $tagNames = $this->validateTags($input['tags'] ?? [], $errors);
 
-        // 課題点・問題点／期待する未来：地域登録フォーム（街タネUI）の必須項目
+        // 課題点・問題点／期待する未来：任意項目（area_challenge_requestsへの最初の投稿として
+        // 使われる。入力されなければ地域登録時点では投稿を作成しない）
         $challenges = trim((string)($input['challenges'] ?? ''));
-        if ($challenges === '') {
-            $errors['challenges'] = '課題点・問題点は必須です';
-        } elseif (mb_strlen($challenges) > self::MAX_CHALLENGES_LENGTH) {
+        if ($challenges !== '' && mb_strlen($challenges) > self::MAX_CHALLENGES_LENGTH) {
             $errors['challenges'] = '課題点・問題点は' . self::MAX_CHALLENGES_LENGTH . '文字以内で入力してください';
         }
 
         $expectedFuture = trim((string)($input['expected_future'] ?? ''));
-        if ($expectedFuture === '') {
-            $errors['expected_future'] = '期待する未来は必須です';
-        } elseif (mb_strlen($expectedFuture) > self::MAX_EXPECTED_FUTURE_LENGTH) {
+        if ($expectedFuture !== '' && mb_strlen($expectedFuture) > self::MAX_EXPECTED_FUTURE_LENGTH) {
             $errors['expected_future'] = '期待する未来は' . self::MAX_EXPECTED_FUTURE_LENGTH . '文字以内で入力してください';
         }
 
@@ -155,9 +160,12 @@ class AreaValidator
             'average_age' => $averageAge,
             'main_industry' => $mainIndustry,
             'transit_access' => $transitAccess,
+            'other' => $other,
             'tags' => $tagNames,
-            'challenges' => $challenges,
-            'expected_future' => $expectedFuture,
+            // challenges/expected_futureは両方入力されている場合のみ、
+            // area_challenge_requestsへの最初の投稿としてAreaService側で使う
+            'challenges' => $challenges === '' ? null : $challenges,
+            'expected_future' => $expectedFuture === '' ? null : $expectedFuture,
         ];
     }
 
@@ -177,6 +185,27 @@ class AreaValidator
 
         if (mb_strlen($value) > self::MAX_LIFESTYLE_FIELD_LENGTH) {
             $errors[$field] = $label . 'は' . self::MAX_LIFESTYLE_FIELD_LENGTH . '文字以内で入力してください';
+        }
+
+        return $value;
+    }
+
+    /**
+     * 「その他」欄（自由記述）のバリデーション。他のライフスタイル項目より長い文章を想定するため
+     * 上限文字数だけ別定数にしている（空文字→null変換のロジックは共通）。
+     *
+     * @param mixed $rawValue
+     * @param array<string, string> $errors
+     */
+    private function validateOther($rawValue, array &$errors): ?string
+    {
+        $value = trim((string) $rawValue);
+        if ($value === '') {
+            return null;
+        }
+
+        if (mb_strlen($value) > self::MAX_OTHER_LENGTH) {
+            $errors['other'] = 'その他は' . self::MAX_OTHER_LENGTH . '文字以内で入力してください';
         }
 
         return $value;

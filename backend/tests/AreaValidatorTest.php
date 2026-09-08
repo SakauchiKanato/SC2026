@@ -55,8 +55,9 @@ function assertTrue(bool $condition, string $message): void
 $validator = new AreaValidator();
 
 // --- 正常系 ---
-// name・challenges（課題点・問題点）・expected_future（期待する未来）は必須。
-// features/address/latitude/longitude/tagsは任意項目（街タネUIの地域登録フォームに合わせる）
+// nameのみ必須。features/address/latitude/longitude/tags/challenges/expected_future/other
+// はすべて任意項目（街タネUIの地域登録フォームに合わせる。challenges/expected_futureは
+// area_challenge_requestsテーブルへの最初の投稿として使われる任意項目に変更した）。
 echo "正常系: 必須項目のみ入力（他は任意項目なので省略可）\n";
 $result = $validator->validate([
     'name' => '〇〇地区',
@@ -154,20 +155,46 @@ try {
     assertTrue(isset($e->getErrors()['address']), 'address文字数超過のエラーが含まれる');
 }
 
-echo "\n異常系: challenges（課題点・問題点）が空\n";
+echo "\n正常系: challenges（課題点・問題点）／expected_future（期待する未来）は任意項目のため未入力でもエラーにならない\n";
+$result = $validator->validate(['name' => '〇〇地区']);
+assertEquals(null, $result['challenges'], 'challenges未入力時はnullになる');
+assertEquals(null, $result['expected_future'], 'expected_future未入力時はnullになる');
+
+echo "\n正常系: challengesのみ入力（expected_futureは未入力のままでもエラーにならない）\n";
+$result = $validator->validate(['name' => '〇〇地区', 'challenges' => '課題']);
+assertEquals('課題', $result['challenges'], 'challengesが保存される');
+assertEquals(null, $result['expected_future'], 'expected_future未入力時はnullになる');
+
+echo "\n異常系: challengesが最大文字数(2000文字)を超える\n";
 try {
-    $validator->validate(['name' => '〇〇地区', 'expected_future' => '未来']);
+    $validator->validate(['name' => '〇〇地区', 'challenges' => str_repeat('あ', 2001)]);
     assertTrue(false, '例外が投げられるべき');
 } catch (AreaValidationException $e) {
-    assertTrue(isset($e->getErrors()['challenges']), 'challengesのエラーが含まれる');
+    assertTrue(isset($e->getErrors()['challenges']), 'challenges文字数超過のエラーが含まれる');
 }
 
-echo "\n異常系: expected_future（期待する未来）が空\n";
+echo "\n異常系: expected_futureが最大文字数(2000文字)を超える\n";
 try {
-    $validator->validate(['name' => '〇〇地区', 'challenges' => '課題']);
+    $validator->validate(['name' => '〇〇地区', 'expected_future' => str_repeat('あ', 2001)]);
     assertTrue(false, '例外が投げられるべき');
 } catch (AreaValidationException $e) {
-    assertTrue(isset($e->getErrors()['expected_future']), 'expected_futureのエラーが含まれる');
+    assertTrue(isset($e->getErrors()['expected_future']), 'expected_future文字数超過のエラーが含まれる');
+}
+
+echo "\n正常系: その他（other）未入力時はnullになる\n";
+$result = $validator->validate(['name' => '〇〇地区']);
+assertEquals(null, $result['other'], 'other未入力時はnullになる');
+
+echo "\n正常系: その他（other）が保存される\n";
+$result = $validator->validate(['name' => '〇〇地区', 'other' => '駅前に大きな商店街があります']);
+assertEquals('駅前に大きな商店街があります', $result['other'], 'otherが保存される');
+
+echo "\n異常系: その他（other）が最大文字数(1000文字)を超える\n";
+try {
+    $validator->validate(['name' => '〇〇地区', 'other' => str_repeat('あ', 1001)]);
+    assertTrue(false, '例外が投げられるべき');
+} catch (AreaValidationException $e) {
+    assertTrue(isset($e->getErrors()['other']), 'other文字数超過のエラーが含まれる');
 }
 
 echo "\n正常系: ライフスタイルデータ未入力時はすべてnullになる\n";

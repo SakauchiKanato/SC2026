@@ -16,7 +16,7 @@ async function handleResponse(response) {
   const body = contentType.includes('application/json') ? await response.json() : null;
 
   if (!response.ok) {
-    const error = new Error(body?.error ?? 'APIリクエストに失敗しました');
+    const error = new Error(body?.error ?? body?.message ?? 'APIリクエストに失敗しました');
     error.status = response.status;
     error.errors = body?.errors ?? null;
     throw error;
@@ -81,4 +81,45 @@ export async function deleteArea(id) {
 export async function fetchFeatureTags() {
   const response = await fetch(`${API_BASE_URL}/feature-tags`);
   return handleResponse(response);
+}
+
+/**
+ * 「企業・自治体が実現したいこと」（課題点・問題点／期待する未来）の投稿。
+ * 地域を登録していない企業・自治体も含め、誰でも・何件でも投稿できる掲示板形式
+ * （area_challenge_requestsテーブル）。一覧取得はログイン不要。
+ */
+export async function fetchAreaChallenges(areaId) {
+  const response = await fetch(`${API_BASE_URL}/areas/${areaId}/challenges`);
+  return handleResponse(response);
+}
+
+export async function createAreaChallenge(areaId, payload) {
+  const response = await fetch(`${API_BASE_URL}/areas/${areaId}/challenges`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+export async function updateAreaChallenge(id, payload) {
+  const response = await fetch(`${API_BASE_URL}/challenges/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+export async function deleteAreaChallenge(id) {
+  const response = await fetch(`${API_BASE_URL}/challenges/${id}`, {
+    method: 'DELETE',
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    const error = new Error('削除に失敗しました');
+    error.status = response.status;
+    throw error;
+  }
 }
