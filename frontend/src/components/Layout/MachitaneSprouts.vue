@@ -1,48 +1,36 @@
 <!--
-  背景装飾用の「双葉」パーツを複数まとめて表示するコンポーネント。
-  トップページのキャッチコピー周辺に、発芽の様子を表す小さな双葉を
-  高さや向きを変えてランダムに配置している（PDFデザイン準拠）。
-  装飾目的のため aria-hidden="true"、クリック判定も持たせない。
+  ヒーロー見出し下に横一列で並ぶ芽アイコンの装飾（machitane-design/Main.dc.html準拠）。
+  中央だけアクセントカラー（アンバー）にし、両端に近いものを半透明にすることで
+  奥行きのあるリズムを出している。装飾目的のため aria-hidden="true"。
 -->
 <script setup>
-// 配置パターン（x, y, スケール, 土台の有無）。
-// 高さをばらけさせることで「発芽している途中」の賑やかさを表現する。
 const sprouts = [
-  { x: 20, y: 46, scale: 0.85, mound: true },
-  { x: 130, y: 10, scale: 0.75, mound: false },
-  { x: 235, y: 44, scale: 0.95, mound: true },
-  { x: 350, y: 6, scale: 0.7, mound: false },
-  { x: 460, y: 40, scale: 0.9, mound: true },
-  { x: 575, y: 4, scale: 0.72, mound: false },
-  { x: 685, y: 42, scale: 0.9, mound: true },
-  { x: 800, y: 12, scale: 0.78, mound: false },
-  { x: 905, y: 44, scale: 0.85, mound: true },
+  { size: 26, faint: false, amber: false },
+  { size: 22, faint: true, amber: false },
+  { size: 30, faint: false, amber: true },
+  { size: 22, faint: true, amber: false },
+  { size: 26, faint: false, amber: false },
 ]
 </script>
 
 <template>
-  <svg
-    class="mt-sprout-bg"
-    viewBox="0 0 960 110"
-    preserveAspectRatio="none"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <g
+  <div class="mt-sprout-row" aria-hidden="true">
+    <svg
       v-for="(s, index) in sprouts"
       :key="index"
-      :transform="`translate(${s.x}, ${s.y}) scale(${s.scale})`"
+      :width="s.size"
+      :height="Math.round(s.size * 1.3)"
+      viewBox="0 0 26 34"
+      fill="none"
+      class="mt-sprout-row__icon"
+      :class="{ 'mt-sprout-row__icon--faint': s.faint, 'mt-sprout-row__icon--amber': s.amber }"
     >
-      <ellipse v-if="s.mound" cx="20" cy="46" rx="15" ry="5" class="mt-sprout-bg__mound" />
-      <path d="M20,46 L20,26" class="mt-sprout-bg__stem" />
+      <path d="M13 34V17" stroke-width="2.2" stroke-linecap="round" class="mt-sprout-row__stem" />
+      <path d="M13 22C13 22 4 22 4 12C13 12 13 22 13 22Z" class="mt-sprout-row__leaf" />
       <path
-        d="M20,30 C9,27 3,16 9,8 C15,3 22,9 20,22 Z"
-        class="mt-sprout-bg__leaf"
+        d="M13 17C13 17 22 17 22 8C13 8 13 17 13 17Z"
+        class="mt-sprout-row__leaf mt-sprout-row__leaf--dark"
       />
-      <path
-        d="M20,30 C31,27 37,16 31,8 C25,3 18,9 20,22 Z"
-        class="mt-sprout-bg__leaf"
-      />
-    </g>
-  </svg>
+    </svg>
+  </div>
 </template>

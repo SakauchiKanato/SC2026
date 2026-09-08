@@ -20,8 +20,11 @@ const router = useRouter()
 const { user, isAuthenticated, logout } = useAuthStore()
 
 function handleLogout() {
+  // logout()でuserがnullになる前に、どちらのロールだったかを控えておく
+  // （machitane-design/ProposerLogout.dc.html・CompanyLogout.dc.htmlの案内文出し分け用）
+  const loggedOutRouteName = user.value?.role === 'company' ? 'logout-company' : 'logout-proposer'
   logout()
-  router.push({ name: 'home' })
+  router.push({ name: loggedOutRouteName })
 }
 
 function handleSwitchLogin(routeName) {

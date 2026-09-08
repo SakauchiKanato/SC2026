@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/Auth/LoginView.vue'
 import SignupView from '../views/Auth/SignupView.vue'
+import LogoutView from '../views/Auth/LogoutView.vue'
 import { useAuthStore } from '../store/auth'
 import ideaRoutes from './idea.routes'
 import areaRoutes from './area.routes'
@@ -22,6 +23,20 @@ const routes = [
     meta: { guestOnly: true },
   },
   { path: '/signup', name: 'signup', component: SignupView, meta: { guestOnly: true } },
+  // AppHeaderのログアウトボタンから遷移する完了画面（machitane-design/ProposerLogout.dc.html・
+  // CompanyLogout.dc.htmlに対応）。ログアウト後に遷移するのでguestOnly。
+  {
+    path: '/logout/proposer',
+    name: 'logout-proposer',
+    component: LogoutView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/logout/company',
+    name: 'logout-company',
+    component: LogoutView,
+    meta: { guestOnly: true },
+  },
   ...ideaRoutes,
   ...areaRoutes,
 ]
