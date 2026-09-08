@@ -35,16 +35,19 @@ const AREA = {
   ideas_count: 0,
 }
 
-async function setup(role) {
+// ログイン中のユーザー(id: 10)が登録した地域（オーナー向けテスト用）
+const OWNED_AREA = { ...AREA, user_id: 10 }
+
+async function setup(role, { area = AREA } = {}) {
   vi.resetModules()
   const authApi = await import('../../../api/auth')
   const areaApi = await import('../../../api/area')
   const { useAuthStore } = await import('../../../store/auth')
   const { default: AreaDetailView } = await import('../AreaDetailView.vue')
 
-  areaApi.fetchArea.mockResolvedValue(AREA)
+  areaApi.fetchArea.mockResolvedValue(area)
   authApi.login.mockResolvedValue({
-    data: { token: 'fake-jwt', user: { id: 10, name: 'テストユーザー', role } },
+    data: { token: 'fake-jwt', user: { id: 10, name: '渋谷区役所', role } },
   })
   const store = useAuthStore()
   await store.login({ email: 'test@example.com', password: 'password123' })
@@ -113,5 +116,49 @@ describe('AreaDetailView（企業・自治体、他社の地域を閲覧）', ()
   it('アイデア登録の導線は表示しない（企業・自治体はアイデアを登録できない）', async () => {
     const { wrapper } = await setup('company')
     expect(wrapper.text()).not.toContain('アイデア登録はこちらから')
+  })
+})
+
+describe('AreaDetailView（オーナー本人）', () => {
+  it('初期表示は読み取り専用の確認画面（編集フォームは表示しない）', async () => {
+    const { wrapper } = await setup('company', { area: OWNED_AREA })
+    expect(wrapper.text()).toContain('この地域の情報を編集しますか？')
+    expect(wrapper.find('#edit-population').exists()).toBe(false)
+    expect(wrapper.text()).toContain('渋谷区役所（あなたの団体）')
+  })
+
+  it('「編集する」を押すと編集画面に切り替わり、保存すると完了表示になる', async () => {
+    const { wrapper } = await setup('company', { area: OWNED_AREA })
+    const areaApi = await import('../../../api/area')
+    areaApi.updateArea.mockResolvedValue({ ...OWNED_AREA, population: '約22.6万人' })
+
+    await wrapper.find('.area-detail-view__cta-btn').trigger('click')
+    expect(wrapper.text()).toContain('編集モード')
+    expect(wrapper.find('#edit-population').exists()).toBe(true)
+
+    await wrapper.find('#edit-population').setValue('約22.6万人')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(areaApi.updateArea).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ population: '約22.6万人' }),
+    )
+    expect(wrapper.text()).toContain('変更を保存しました')
+  })
+
+  it('保存後にさらに項目を変更すると、保存済み表示は消える', async () => {
+    const { wrapper } = await setup('company', { area: OWNED_AREA })
+    const areaApi = await import('../../../api/area')
+    areaApi.updateArea.mockResolvedValue(OWNED_AREA)
+
+    await wrapper.find('.area-detail-view__cta-btn').trigger('click')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('変更を保存しました')
+
+    await wrapper.find('#edit-population').setValue('約23万人')
+    expect(wrapper.text()).not.toContain('変更を保存しました')
+    expect(wrapper.text()).toContain('変更を保存する')
   })
 })
