@@ -717,3 +717,166 @@ a:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ログイン・新規登録カード（LoginForm.vue, SignupForm.vueで共通利用） */
+.mt-auth-card {
+  display: flex;
+  flex-direction: column;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 36px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mt-auth-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.mt-auth-card__field label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mt-auth-card__field input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.mt-auth-card__field input:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px oklch(56% 0.1 146 / 0.14);
+}
+
+.mt-auth-card__field input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.mt-auth-card__error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--error);
+}
+
+.mt-auth-card__agreement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.mt-auth-card__agreement input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand-700);
+  cursor: pointer;
+}
+
+.mt-auth-card__submit {
+  width: 100%;
+  padding: 15px;
+  margin-top: 4px;
+  border: none;
+  border-radius: var(--mt-radius-pill);
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--brand-700);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mt-auth-card__submit:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.mt-auth-card__submit:disabled {
+  background: var(--line-soft);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+/* ログイン・新規登録ページ共通のレイアウト（LoginView.vue, SignupView.vueで共通利用） */
+.auth-view {
+  max-width: 480px;
+}
+
+.auth-view__header {
+  text-align: center;
+  margin-bottom: var(--idea-spacing-lg);
+}
+
+.auth-view__title {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.auth-view__description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.auth-view__switch {
+  text-align: center;
+  margin-top: var(--idea-spacing-md);
+  font-size: 0.9rem;
+  color: var(--idea-color-text-muted);
+}
+
+.auth-view__success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.auth-view__success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--mt-radius-pill);
+  background: var(--surface-sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  stroke: var(--brand-900);
+}
+
+.auth-view__success-cta {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 13px 30px;
+  border: none;
+  border-radius: var(--mt-radius-pill);
+  background: var(--brand-700);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.auth-view__success-cta:hover {
+  color: #ffffff;
+}

@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 const MAX_NAME_LENGTH = 100
 const MIN_PASSWORD_LENGTH = 8
@@ -8,7 +8,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const props = defineProps({
   // 発案者ログイン/企業・自治体ログインどちらの画面から新規登録に来たかに応じて、
-  // アカウント種別ラジオボタンの初期値を切り替える（街タネUI）
+  // 見出し・メールプレースホルダーを出し分ける。ロールは新デザインのログイン画面と
+  // 同様、画面（ルート）ごとに固定とし、フォーム上で選び直せるようにはしていない。
   defaultRole: {
     type: String,
     default: 'user',
@@ -17,12 +18,15 @@ const props = defineProps({
 
 const emit = defineEmits(['submit'])
 
+const emailPlaceholder = computed(() =>
+  props.defaultRole === 'company' ? 'example@city-shibuya.jp' : 'example@machitane.jp',
+)
+
 const form = reactive({
   name: '',
   email: '',
   password: '',
   passwordConfirmation: '',
-  role: props.defaultRole === 'company' ? 'company' : 'user', // 'user'=発案者, 'company'=地域活性化を検討する企業（usersテーブルのrole列と対応）
 })
 
 const errors = reactive({
@@ -30,6 +34,19 @@ const errors = reactive({
   email: '',
   password: '',
   passwordConfirmation: '',
+})
+
+// 利用規約への同意チェック。バックエンドには同意有無を記録する項目が無いため、
+// UI上で送信を止めるためだけに使い、送信データには含めない。
+const agreed = ref(false)
+
+const canSubmit = computed(() => {
+  const validEmail = EMAIL_PATTERN.test(form.email.trim())
+  const validPassword =
+    form.password.length >= MIN_PASSWORD_LENGTH && form.password.length <= MAX_PASSWORD_LENGTH
+  const passwordsMatch =
+    form.passwordConfirmation.length > 0 && form.passwordConfirmation === form.password
+  return Boolean(form.name.trim()) && validEmail && validPassword && passwordsMatch && agreed.value
 })
 
 function validate() {
@@ -63,19 +80,19 @@ function validate() {
 }
 
 function handleSubmit() {
-  if (!validate()) return
+  if (!validate() || !agreed.value) return
   emit('submit', {
     name: form.name.trim(),
     email: form.email.trim(),
     password: form.password,
-    role: form.role,
+    role: props.defaultRole === 'company' ? 'company' : 'user',
   })
 }
 </script>
 
 <template>
-  <form class="idea-form" novalidate @submit.prevent="handleSubmit">
-    <div class="idea-form__field">
+  <form class="mt-auth-card" novalidate @submit.prevent="handleSubmit">
+    <div class="mt-auth-card__field">
       <label for="signup-name">お名前</label>
       <input
         id="signup-name"
@@ -83,128 +100,58 @@ function handleSubmit() {
         type="text"
         autocomplete="name"
         :maxlength="MAX_NAME_LENGTH"
-        placeholder="例）山田太郎"
+        placeholder="例：山田 太郎"
         :aria-invalid="Boolean(errors.name)"
       />
-      <p v-if="errors.name" class="idea-form__error" role="alert">{{ errors.name }}</p>
+      <p v-if="errors.name" class="mt-auth-card__error" role="alert">{{ errors.name }}</p>
     </div>
 
-    <div class="idea-form__field">
-      <span class="idea-form__label">アカウント種別</span>
-      <div class="idea-form__status-options">
-        <label class="idea-form__status-option">
-          <input v-model="form.role" type="radio" name="signup-role" value="user" />
-          発案者として登録する
-        </label>
-        <label class="idea-form__status-option">
-          <input v-model="form.role" type="radio" name="signup-role" value="company" />
-          企業として登録する
-        </label>
-      </div>
-    </div>
-
-    <div class="idea-form__field">
+    <div class="mt-auth-card__field">
       <label for="signup-email">メールアドレス</label>
       <input
         id="signup-email"
         v-model="form.email"
         type="email"
         autocomplete="email"
-        placeholder="例）taro@example.com"
+        :placeholder="emailPlaceholder"
         :aria-invalid="Boolean(errors.email)"
       />
-      <p v-if="errors.email" class="idea-form__error" role="alert">{{ errors.email }}</p>
+      <p v-if="errors.email" class="mt-auth-card__error" role="alert">{{ errors.email }}</p>
     </div>
 
-    <div class="idea-form__field">
+    <div class="mt-auth-card__field">
       <label for="signup-password">パスワード</label>
       <input
         id="signup-password"
         v-model="form.password"
         type="password"
         autocomplete="new-password"
-        :placeholder="`${MIN_PASSWORD_LENGTH}文字以上`"
+        placeholder="8文字以上で入力"
         :aria-invalid="Boolean(errors.password)"
       />
-      <p v-if="errors.password" class="idea-form__error" role="alert">{{ errors.password }}</p>
+      <p v-if="errors.password" class="mt-auth-card__error" role="alert">{{ errors.password }}</p>
     </div>
 
-    <div class="idea-form__field">
-      <label for="signup-password-confirmation">パスワード（確認用）</label>
+    <div class="mt-auth-card__field">
+      <label for="signup-password-confirmation">パスワード（確認）</label>
       <input
         id="signup-password-confirmation"
         v-model="form.passwordConfirmation"
         type="password"
         autocomplete="new-password"
+        placeholder="もう一度入力"
         :aria-invalid="Boolean(errors.passwordConfirmation)"
       />
-      <p v-if="errors.passwordConfirmation" class="idea-form__error" role="alert">
+      <p v-if="errors.passwordConfirmation" class="mt-auth-card__error" role="alert">
         {{ errors.passwordConfirmation }}
       </p>
     </div>
 
-    <button type="submit" class="idea-button">登録する</button>
+    <label class="mt-auth-card__agreement">
+      <input v-model="agreed" type="checkbox" />
+      <span>利用規約およびプライバシーポリシーに同意する</span>
+    </label>
+
+    <button type="submit" class="mt-auth-card__submit" :disabled="!canSubmit">登録する</button>
   </form>
 </template>
-
-<style scoped>
-/* IdeaForm.vueと同じ入力欄スタイル（コンポーネントごとにscopedなCSSを持つ既存の方針を踏襲） */
-.idea-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--idea-spacing-md);
-  max-width: 420px;
-}
-
-.idea-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.idea-form__field label,
-.idea-form__label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--idea-color-text);
-}
-
-.idea-form__status-options {
-  display: flex;
-  gap: var(--idea-spacing-md);
-}
-
-.idea-form__status-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 400;
-}
-
-/* :not([type='radio'])で除外しないと、上のアカウント種別ラジオボタンにも
-   テキスト入力用の枠線・パディングが付いてしまう */
-.idea-form__field input:not([type='radio']) {
-  border: 1px solid var(--idea-color-border);
-  border-radius: var(--idea-radius);
-  padding: 10px 12px;
-  font-size: 0.95rem;
-  font-family: inherit;
-  color: var(--idea-color-text);
-  background: var(--idea-color-surface);
-}
-
-.idea-form__field input:not([type='radio']):focus {
-  outline: 2px solid var(--idea-color-accent);
-  outline-offset: 1px;
-}
-
-.idea-form__field input:not([type='radio'])[aria-invalid='true'] {
-  border-color: var(--idea-color-danger);
-}
-
-.idea-form__error {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--idea-color-danger);
-}
-</style>
