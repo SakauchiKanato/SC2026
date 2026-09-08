@@ -3,11 +3,14 @@
   未ログイン時：machitane-design/Main.dc.html準拠のランディング（バッジ・見出し・
     3列特徴・芽アイコン装飾）。発案者/企業・自治体への導線は、新デザインの2列カードではなく
     既存の葉っぱ型ボタン(MachitaneDoubleLeafCta)を踏襲する（チームの意向）。
-  ログイン時（発案者）：「おかえりなさい」＋現在アイデア募集中の地域一覧（PDF4枚目）。
-  ログイン時（企業・自治体）：「おかえりなさい」＋自分が登録した地域一覧。
-    地域ごとに「詳細をみる（特色の編集）」「新着アイデア」「過去のアイデア」に進める
-    （企業・自治体は複数の地域を登録できる想定のため、発案者向けの「地域一覧」画面と
-    同じ並び・同じAreaCard(mode="browse")を使い、表示対象だけ自分の地域に絞っている）。
+  ログイン時（発案者）：machitane-design/ProposerHome.dc.html準拠。「おかえりなさい」＋
+    地域名検索ボックス＋現在アイデア募集中の地域一覧。
+  ログイン時（企業・自治体）：machitane-design/CompanyHome.dc.html準拠。「おかえりなさい」＋
+    自分が登録した地域一覧。地域ごとに「詳細をみる（特色の編集）」「新着アイデア」
+    「過去のアイデア」に進める（企業・自治体は複数の地域を登録できる想定のため、発案者向けの
+    「地域一覧」画面と同じ並び・同じAreaCard(mode="browse")を使い、表示対象だけ自分の地域に
+    絞っている）。なお企業ホームの「すべて/募集中/募集終了」フィルタは、地域に募集状態を表す
+    カラムが無く実装できないため見送っている。
 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -25,15 +28,22 @@ const areas = ref([])
 const isLoading = ref(false)
 const loadError = ref('')
 
+// 発案者ホームの地域名検索（ProposerHome.dc.html準拠、クライアント側の部分一致）
+const searchQuery = ref('')
+
 // 企業・自治体は「自分が登録した地域」だけを表示する。
 // PostgreSQL(PDO)からのuser_idは文字列で返るため、AreaDetailView.vueのisOwnerと
 // 同じ方針で数値化して比較する。
 const displayedAreas = computed(() => {
-  if (!isCompany.value) {
-    return areas.value
+  if (isCompany.value) {
+    return areas.value.filter((area) => Number(area.user_id) === Number(user.value?.id))
   }
-  return areas.value.filter((area) => Number(area.user_id) === Number(user.value?.id))
+  return areas.value.filter((area) => area.name.includes(searchQuery.value))
 })
+
+const isSearchEmpty = computed(
+  () => !isCompany.value && searchQuery.value.length > 0 && displayedAreas.value.length === 0,
+)
 
 async function loadAreas() {
   isLoading.value = true
@@ -110,16 +120,33 @@ onMounted(() => {
       </RouterLink>
     </div>
 
-    <header v-else class="idea-page-header">
-      <h1>おかえりなさい、{{ user?.name }} さん</h1>
-      <p class="idea-page-description">現在、アイデア募集中の地域はこちら！</p>
-    </header>
+    <template v-else>
+      <header class="idea-page-header">
+        <h1>おかえりなさい、{{ user?.name }} さん</h1>
+        <p class="idea-page-description">現在、アイデア募集中の地域はこちらです。</p>
+      </header>
+
+      <div class="mt-searchbox">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="7" stroke-width="2" />
+          <path d="M21 21l-4.3-4.3" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <input v-model="searchQuery" type="text" placeholder="地域名で検索（例：渋谷）" />
+      </div>
+    </template>
 
     <p v-if="isLoading" class="idea-loading-indicator">読み込み中です…</p>
     <p v-else-if="loadError" class="idea-banner idea-banner--error">{{ loadError }}</p>
     <p v-else-if="displayedAreas.length === 0 && isCompany" class="idea-empty-state">
       まだ地域を登録していません。「地域登録はこちらから→」から最初の地域を登録しましょう。
     </p>
+    <div v-else-if="isSearchEmpty" class="mt-search-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="7" stroke-width="2" />
+        <path d="M21 21l-4.3-4.3" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <p>「{{ searchQuery }}」に一致する地域が見つかりませんでした。</p>
+    </div>
     <p v-else-if="displayedAreas.length === 0" class="idea-empty-state">
       まだ登録されている地域がありません。
     </p>

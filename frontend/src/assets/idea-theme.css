@@ -304,7 +304,7 @@ a:hover {
   margin: 0;
 }
 
-/* 地域カード（緑） */
+/* 地域カード（ProposerHome.dc.html・CompanyHome.dc.html準拠） */
 .mt-area-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -312,36 +312,85 @@ a:hover {
 }
 
 .mt-area-card {
-  background: var(--mt-color-green);
-  border-radius: var(--mt-radius-card);
-  padding: 20px 22px;
-  color: #16240c;
-  box-shadow: var(--mt-shadow-card);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-sage);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.mt-area-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
 }
 
 .mt-area-card__name {
-  margin: 0 0 6px;
-  font-size: 1.3rem;
-  font-weight: 800;
+  margin: 0 0 14px;
+  font-size: 1.2rem;
+  font-weight: 700;
   font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  color: var(--ink);
 }
 
 .mt-area-card__meta {
-  margin: 0 0 14px;
-  font-size: 0.95rem;
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+/* mode="home"（発案者）: 募集件数バッジ＋「詳細をみる→」の下段行 */
+.mt-area-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid oklch(99% 0.005 90 / 0.6);
+}
+
+.mt-area-card__count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--mt-radius-pill);
+  background: var(--surface-amber-soft);
+  color: oklch(38% 0.09 60);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.mt-area-card__detail-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brand-900);
+  stroke: var(--brand-900);
+}
+
+/* mode="browse"（企業・自治体）: 下線リンクの「詳細をみる」「新着/過去のアイデア」 */
+.mt-area-card__link {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brand-900);
+  text-decoration: underline;
+  margin-bottom: 18px;
 }
 
 .mt-area-card__links {
   display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 0.9rem;
+  align-items: center;
+  gap: 18px;
+  margin-top: auto;
+  font-size: 0.8rem;
 }
 
-.mt-area-card__links a,
-.mt-area-card__meta a {
-  color: #16240c;
-  font-weight: 700;
+.mt-area-card__links a {
+  color: var(--brand-900);
+  font-weight: 600;
   text-decoration: underline;
 }
 
@@ -943,4 +992,51 @@ a:hover {
 
 .logout-view__secondary:hover {
   color: var(--brand-900);
+}
+
+/* 発案者ホームの地域名検索ボックス（ProposerHome.dc.html） */
+.mt-searchbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 420px;
+  padding: 12px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-bottom: var(--idea-spacing-lg);
+  stroke: var(--ink-faint);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.mt-searchbox:focus-within {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px oklch(56% 0.1 146 / 0.14);
+}
+
+.mt-searchbox input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.mt-search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 0;
+  color: var(--ink-faint);
+  stroke: var(--ink-faint);
+}
+
+.mt-search-empty svg {
+  margin-bottom: 14px;
+}
+
+.mt-search-empty p {
+  margin: 0;
+  font-size: 0.9rem;
 }
