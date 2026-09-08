@@ -591,3 +591,16 @@ body {
   font-size: 0.85rem;
   margin: 0;
 }
+
+/* 地域登録フォームの「人口・昼夜人口比率」「平均年齢・主要産業」のような2カラム入力行 */
+.mt-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--idea-spacing-md);
+}
+
+@media (max-width: 640px) {
+  .mt-form-row {
+    grid-template-columns: 1fr;
+  }
+}

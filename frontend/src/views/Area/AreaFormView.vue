@@ -1,4 +1,4 @@
-<!-- 地域登録フォーム（PDF9枚目）。新規登録専用（編集は地域詳細ページ内で行う） -->
+<!-- 地域登録フォーム（PDF9枚目「地域登録フォーム」に準拠）。新規登録専用（編集は地域詳細ページ内で行う） -->
 <template>
   <section class="mt-page area-form-view">
     <div class="mt-page__header">
@@ -13,16 +13,89 @@
         <p v-if="errors.name" class="mt-form-field__error">{{ errors.name }}</p>
       </div>
 
-      <div class="mt-form-field">
-        <label for="address">住所（任意）</label>
-        <input id="address" v-model="form.address" type="text" maxlength="255" />
-        <p v-if="errors.address" class="mt-form-field__error">{{ errors.address }}</p>
-      </div>
+      <div class="area-form-view__section">
+        <h2 class="area-form-view__section-title">ライフスタイルデータ（任意）</h2>
+        <p class="idea-page-description">
+          分かる範囲で構いません。地域の特色として、他のユーザーに表示されます。
+        </p>
 
-       <div class="mt-form-field">
-        <label for="address">ライフスタイルデータ</label>
-        <input id="address" v-model="form.address" type="text" maxlength="255" />
-        <p v-if="errors.address" class="mt-form-field__error">{{ errors.address }}</p>
+        <div class="mt-form-field">
+          <label for="address">住所</label>
+          <input
+            id="address"
+            v-model="form.address"
+            type="text"
+            maxlength="255"
+            placeholder="例：東京都渋谷区宇田川町1-1"
+          />
+          <p v-if="errors.address" class="mt-form-field__error">{{ errors.address }}</p>
+        </div>
+
+        <div class="mt-form-row">
+          <div class="mt-form-field">
+            <label for="population">人口</label>
+            <input
+              id="population"
+              v-model="form.population"
+              type="text"
+              maxlength="255"
+              placeholder="例：約22.6万人"
+            />
+            <p v-if="errors.population" class="mt-form-field__error">{{ errors.population }}</p>
+          </div>
+
+          <div class="mt-form-field">
+            <label for="day_night_population_ratio">昼夜人口比率</label>
+            <input
+              id="day_night_population_ratio"
+              v-model="form.dayNightPopulationRatio"
+              type="text"
+              maxlength="255"
+              placeholder="例：約230%"
+            />
+            <p v-if="errors.day_night_population_ratio" class="mt-form-field__error">
+              {{ errors.day_night_population_ratio }}
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-form-row">
+          <div class="mt-form-field">
+            <label for="average_age">平均年齢</label>
+            <input
+              id="average_age"
+              v-model="form.averageAge"
+              type="text"
+              maxlength="255"
+              placeholder="例：38.4歳"
+            />
+            <p v-if="errors.average_age" class="mt-form-field__error">{{ errors.average_age }}</p>
+          </div>
+
+          <div class="mt-form-field">
+            <label for="main_industry">主要産業</label>
+            <input
+              id="main_industry"
+              v-model="form.mainIndustry"
+              type="text"
+              maxlength="255"
+              placeholder="例：商業・サービス業 / IT"
+            />
+            <p v-if="errors.main_industry" class="mt-form-field__error">{{ errors.main_industry }}</p>
+          </div>
+        </div>
+
+        <div class="mt-form-field">
+          <label for="transit_access">交通アクセス</label>
+          <input
+            id="transit_access"
+            v-model="form.transitAccess"
+            type="text"
+            maxlength="255"
+            placeholder="例：JR山手線・私鉄5路線が乗り入れる広域ターミナル"
+          />
+          <p v-if="errors.transit_access" class="mt-form-field__error">{{ errors.transit_access }}</p>
+        </div>
       </div>
 
       <div class="mt-form-field">
@@ -59,6 +132,11 @@ const router = useRouter()
 const form = reactive({
   name: '',
   address: '',
+  population: '',
+  dayNightPopulationRatio: '',
+  averageAge: '',
+  mainIndustry: '',
+  transitAccess: '',
   challenges: '',
   expectedFuture: '',
 })
@@ -75,6 +153,12 @@ async function handleSubmit() {
   const payload = {
     name: form.name,
     address: form.address === '' ? null : form.address,
+    population: form.population === '' ? null : form.population,
+    day_night_population_ratio:
+      form.dayNightPopulationRatio === '' ? null : form.dayNightPopulationRatio,
+    average_age: form.averageAge === '' ? null : form.averageAge,
+    main_industry: form.mainIndustry === '' ? null : form.mainIndustry,
+    transit_access: form.transitAccess === '' ? null : form.transitAccess,
     challenges: form.challenges,
     expected_future: form.expectedFuture,
   }
@@ -97,6 +181,17 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+.area-form-view__section {
+  margin: var(--idea-spacing-lg) 0;
+  padding-top: var(--idea-spacing-md);
+  border-top: 1px solid var(--mt-color-border);
+}
+
+.area-form-view__section-title {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
 .area-form-view__actions {
   display: flex;
   gap: 16px;
