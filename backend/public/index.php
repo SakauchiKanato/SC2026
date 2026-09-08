@@ -55,6 +55,9 @@ $routes = [
     ['GET',    '#^/areas/(\d+)/ideas$#', 'IdeaController', 'index'],
     ['POST',   '#^/areas/(\d+)/ideas$#', 'IdeaController', 'store'],
     ['GET',    '#^/ideas/(\d+)$#',       'IdeaController', 'show'],
+    // 企業・自治体によるアイデア評価（達成／未達成）。CORSのAccess-Control-Allow-Methods
+    // にPATCHが含まれていないため、追加のCORS設定変更が不要なPUTを使う。
+    ['PUT',    '#^/ideas/(\d+)/evaluate$#', 'IdeaController', 'evaluate'],
 
     ['GET',    '#^/areas$#',        'AreaController', 'index'],
     ['GET',    '#^/areas/(\d+)$#',  'AreaController', 'show'],

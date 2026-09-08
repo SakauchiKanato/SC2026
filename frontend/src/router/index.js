@@ -34,7 +34,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   if (to.meta.guestOnly && isAuthenticated.value) {
     return { name: 'home' }
@@ -43,6 +43,12 @@ router.beforeEach((to) => {
   // 書き込み・閲覧系の画面はログイン必須。未ログインでのアクセスは
   // トップページ（発案者/企業・自治体のログイン選択画面）へ戻す。
   if (to.meta.requiresAuth && !isAuthenticated.value) {
+    return { name: 'home' }
+  }
+
+  // ロール限定の画面（例：アイデア登録は発案者(user)専用）。
+  // 該当しないロールでのアクセスはホームへ戻す（実際の認可はバックエンド側でも行う）。
+  if (to.meta.requiresRole && user.value?.role !== to.meta.requiresRole) {
     return { name: 'home' }
   }
 

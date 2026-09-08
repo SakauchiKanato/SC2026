@@ -3,6 +3,7 @@ import {
   fetchIdeas as fetchIdeasApi,
   fetchIdea as fetchIdeaApi,
   createIdea as createIdeaApi,
+  evaluateIdea as evaluateIdeaApi,
 } from '../api/idea'
 
 /**
@@ -53,10 +54,20 @@ export function useIdeaStore() {
     return created
   }
 
+  // 企業・自治体アカウントによるアイデア評価（達成／未達成）
+  async function evaluateIdea(ideaId, evaluation) {
+    state.errorMessage = ''
+    const updated = await evaluateIdeaApi(ideaId, evaluation)
+    state.currentIdea = updated
+    state.ideas = state.ideas.map((idea) => (idea.id === updated.id ? updated : idea))
+    return updated
+  }
+
   return {
     ...toRefs(state),
     loadIdeas,
     loadIdea,
     registerIdea,
+    evaluateIdea,
   }
 }

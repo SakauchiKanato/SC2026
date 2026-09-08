@@ -10,6 +10,17 @@ class AuthMiddleware
     // 認証必須のエンドポイント用。トークンが無い/不正な場合は401を返してexitする。
     public static function requireUserId(): int
     {
+        return self::requireAuth()['id'];
+    }
+
+    // ユーザーIDに加えてロール（user/company）も必要な場合はこちらを使う。
+    // 例：企業・自治体アカウントのみに許可したい操作の認可チェック。
+    // 返り値: ['id' => int, 'role' => ?string]（roleはトークンに含まれない場合はnull）
+    /**
+     * @return array{id: int, role: ?string}
+     */
+    public static function requireAuth(): array
+    {
         $token = self::getBearerToken();
 
         if ($token === null) {
@@ -26,7 +37,10 @@ class AuthMiddleware
             self::unauthorized('認証トークンが不正です');
         }
 
-        return (int) $payload['sub'];
+        return [
+            'id' => (int) $payload['sub'],
+            'role' => isset($payload['role']) && is_string($payload['role']) ? $payload['role'] : null,
+        ];
     }
 
     // Authorization: Bearer <token> からトークン文字列だけを取り出す。

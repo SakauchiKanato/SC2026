@@ -1,12 +1,12 @@
 <!--
   地域カード（緑）。
-  mode="home"   : おかえりなさいホーム用。「募集◯件」＋「詳細をみる」＋「新着アイデア」「過去のアイデア」
-  mode="browse" : アイデア募集地域一覧用。「詳細をみる」＋「新着アイデア」「過去のアイデア」
+  mode="home"   : おかえりなさいホーム用（発案者）。「募集◯件」＋「詳細をみる」のみ。
+  mode="browse" : アイデア募集地域一覧用（企業・自治体）。「詳細をみる」＋「新着アイデア」「過去のアイデア」。
 
-  NOTE: 以前はmode="home"（発案者のホーム画面）に新着・過去アイデアへのリンクが無く、
-        発案者がアイデア一覧（IdeaListView）に辿り着く手段が実質存在しなかった
-        （QA報告書 2026-09-08で指摘）。ホーム画面でも一覧を見られるよう、
-        「新着アイデア」「過去のアイデア」のリンクをbrowseモードと共通化した。
+  NOTE: 以前はmode="home"にも新着・過去アイデアへのリンクを表示していたが
+        （QA報告書 2026-09-08の指摘を受けた一時対応）、発案者が他の発案者の
+        アイデアを見て新規投稿の内容が偏る（意見の集中がわかりにくくなる）ことを避けるため、
+        新着・過去アイデアの閲覧は企業・自治体側（mode="browse"）専用に戻した。
 -->
 <script setup>
 defineProps({
@@ -31,13 +31,15 @@ defineProps({
       <RouterLink :to="{ name: 'area-detail', params: { id: area.id } }">詳細をみる</RouterLink>
     </p>
 
-    <p v-else class="mt-area-card__meta">
-      <RouterLink :to="{ name: 'area-detail', params: { id: area.id } }">詳細をみる</RouterLink>
-    </p>
+    <template v-else>
+      <p class="mt-area-card__meta">
+        <RouterLink :to="{ name: 'area-detail', params: { id: area.id } }">詳細をみる</RouterLink>
+      </p>
 
-    <div class="mt-area-card__links">
-      <RouterLink :to="{ name: 'idea-recent', params: { areaId: area.id } }">新着アイデア</RouterLink>
-      <RouterLink :to="{ name: 'idea-past', params: { areaId: area.id } }">過去のアイデア</RouterLink>
-    </div>
+      <div class="mt-area-card__links">
+        <RouterLink :to="{ name: 'idea-recent', params: { areaId: area.id } }">新着アイデア</RouterLink>
+        <RouterLink :to="{ name: 'idea-past', params: { areaId: area.id } }">過去のアイデア</RouterLink>
+      </div>
+    </template>
   </div>
 </template>
