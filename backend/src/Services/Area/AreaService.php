@@ -3,6 +3,7 @@
 require_once __DIR__ . '/AreaValidator.php';
 require_once __DIR__ . '/../../Models/Area.php';
 require_once __DIR__ . '/../../Models/FeatureTag.php';
+require_once __DIR__ . '/../../Models/AreaChallengeRequest.php';
 
 /**
  * Area サービス
@@ -31,6 +32,9 @@ class AreaService
     /** @var AreaValidator */
     private $validator;
 
+    /** @var AreaChallengeRequest */
+    private $challengeRequestModel;
+
     public function __construct(?\PDO $connection = null)
     {
         if ($connection !== null) {
@@ -40,10 +44,11 @@ class AreaService
             $this->db = Database::getPdoConnection();
         }
 
-        // 同一のPDOインスタンスをArea/FeatureTagモデル双方に渡すことで、
-        // トランザクションが両テーブルへの操作に確実に及ぶようにしている
+        // 同一のPDOインスタンスをArea/FeatureTag/AreaChallengeRequestモデルに渡すことで、
+        // トランザクションが各テーブルへの操作に確実に及ぶようにしている
         $this->areaModel = new Area($this->db);
         $this->featureTagModel = new FeatureTag($this->db);
+        $this->challengeRequestModel = new AreaChallengeRequest($this->db);
         $this->validator = new AreaValidator();
     }
 
@@ -95,6 +100,19 @@ class AreaService
             $id = $this->areaModel->create($data);
             $tagIds = $this->resolveTagIds($data['tags']);
             $this->areaModel->attachTags($id, $tagIds);
+
+            // 課題点・問題点／期待する未来の両方が入力されていれば、登録者自身の
+            // 最初の投稿としてarea_challenge_requestsに1件作成する（任意項目のため、
+            // 未入力なら作成しない。後からでも地域詳細ページから追加できる）。
+            if ($data['challenges'] !== null && $data['expected_future'] !== null) {
+                $this->challengeRequestModel->create([
+                    'area_id' => $id,
+                    'user_id' => $userId,
+                    'challenges' => $data['challenges'],
+                    'expected_future' => $data['expected_future'],
+                ]);
+            }
+
             $this->db->commit();
         } catch (\Throwable $e) {
             $this->db->rollBack();

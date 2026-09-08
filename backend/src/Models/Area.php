@@ -48,8 +48,8 @@ class Area
         $stmt = $this->db->query(
             'SELECT id, user_id, name, features, latitude, longitude, address,
                     population, day_night_population_ratio, average_age,
-                    main_industry, transit_access,
-                    challenges, expected_future, created_at, updated_at,
+                    main_industry, transit_access, other,
+                    created_at, updated_at,
                     (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
              FROM ' . self::TABLE . '
              ORDER BY created_at DESC'
@@ -80,8 +80,8 @@ class Area
         $stmt = $this->db->prepare(
             'SELECT id, user_id, name, features, latitude, longitude, address,
                     population, day_night_population_ratio, average_age,
-                    main_industry, transit_access,
-                    challenges, expected_future, created_at, updated_at,
+                    main_industry, transit_access, other,
+                    created_at, updated_at,
                     (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
              FROM ' . self::TABLE . '
              WHERE id = :id'
@@ -113,11 +113,11 @@ class Area
         $stmt = $this->db->prepare(
             'INSERT INTO ' . self::TABLE . '
              (user_id, name, features, latitude, longitude, address,
-              population, day_night_population_ratio, average_age, main_industry, transit_access,
-              challenges, expected_future, created_at, updated_at)
+              population, day_night_population_ratio, average_age, main_industry, transit_access, other,
+              created_at, updated_at)
              VALUES (:user_id, :name, :features, :latitude, :longitude, :address,
-                     :population, :day_night_population_ratio, :average_age, :main_industry, :transit_access,
-                     :challenges, :expected_future, NOW(), NOW())
+                     :population, :day_night_population_ratio, :average_age, :main_industry, :transit_access, :other,
+                     NOW(), NOW())
              RETURNING id'
         );
 
@@ -133,8 +133,7 @@ class Area
             'average_age' => $data['average_age'] ?? null,
             'main_industry' => $data['main_industry'] ?? null,
             'transit_access' => $data['transit_access'] ?? null,
-            'challenges' => $data['challenges'] ?? null,
-            'expected_future' => $data['expected_future'] ?? null,
+            'other' => $data['other'] ?? null,
         ]);
 
         return (int) $stmt->fetchColumn();
@@ -160,8 +159,7 @@ class Area
                  average_age = :average_age,
                  main_industry = :main_industry,
                  transit_access = :transit_access,
-                 challenges = :challenges,
-                 expected_future = :expected_future
+                 other = :other
              WHERE id = :id'
         );
 
@@ -177,8 +175,7 @@ class Area
             'average_age' => $data['average_age'] ?? null,
             'main_industry' => $data['main_industry'] ?? null,
             'transit_access' => $data['transit_access'] ?? null,
-            'challenges' => $data['challenges'] ?? null,
-            'expected_future' => $data['expected_future'] ?? null,
+            'other' => $data['other'] ?? null,
         ]);
     }
 
