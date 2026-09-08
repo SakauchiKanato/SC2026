@@ -403,11 +403,17 @@ a:hover {
 
 .mt-idea-card {
   border-radius: var(--mt-radius-card);
-  padding: 20px 22px;
+  padding: 24px;
   box-shadow: var(--mt-shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.mt-idea-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
 }
 
 .mt-idea-card--new {
@@ -426,8 +432,11 @@ a:hover {
 }
 
 .mt-idea-card__label {
-  font-size: 0.85rem;
-  color: var(--mt-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand-900);
+  opacity: 0.7;
+  margin: 0;
 }
 
 .mt-idea-card__title {
@@ -437,13 +446,6 @@ a:hover {
   font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
 }
 
-.mt-idea-card__excerpt {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--mt-color-text);
-  white-space: pre-wrap;
-}
-
 .mt-idea-card__footer {
   margin-top: auto;
   display: flex;
@@ -451,30 +453,34 @@ a:hover {
 }
 
 .mt-idea-card__footer a {
-  color: var(--mt-color-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--brand-900);
   font-weight: 700;
-  text-decoration: underline;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .mt-status-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 18px;
+  padding: 4px 14px;
   border-radius: var(--mt-radius-pill);
-  color: #fff;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .mt-status-pill--achieved {
-  background: var(--mt-color-achieved);
+  background: var(--achieved-bg);
+  color: var(--achieved-fg);
 }
 
 .mt-status-pill--not-achieved {
-  background: var(--mt-color-not-achieved);
+  background: var(--pending-bg);
+  color: var(--pending-fg);
 }
 
 /* 情報ボックス（地域の特色） */
