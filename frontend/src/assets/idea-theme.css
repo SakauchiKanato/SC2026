@@ -78,10 +78,30 @@
   --idea-spacing-lg: 32px;
 }
 
+/* machitane-design/*.dc.html側の * { box-sizing: border-box; } と合わせる。
+   これがないとpadding/borderがwidth/max-widthの外側に加算され、
+   カード等の幅計算がデザインとずれる。 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   background: var(--mt-color-bg);
   color: var(--mt-color-text);
   font-family: 'Noto Sans JP', system-ui, sans-serif;
+}
+
+/* リンクの既定色。個別クラス（mt-pill, mt-area-card__linksなど）が
+   より詳細度の高いセレクタで上書きするため、装飾のないリンクにのみ効く */
+a {
+  color: var(--brand-700);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--brand-900);
 }
 
 /* 見出し・ロゴ・CTA等の装飾文字に使うフォント（machitane-design側の.font-displayと同じ） */
