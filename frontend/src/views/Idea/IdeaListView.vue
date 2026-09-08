@@ -1,10 +1,10 @@
 <!--
   地域に紐づくアイデア一覧。
-  variant="recent" : 新着アイデア（PDF10枚目、直近の投稿をシンプルに一覧表示）
-  variant="past"    : 過去のアイデア（PDF11枚目、達成／未達成バッジ付き）
-  どちらも実体は同じideasテーブルで、表示の出し分けのみ行っている
-  （このアプリのアイデアは「既に取り組んだ結果」を記録するものなので、
-   新着＝直近に登録されたもの、過去＝それらを結果つきで振り返る一覧、という位置づけ）。
+  variant="recent" : 新着アイデア（PDF10枚目）＝ まだ企業・自治体の評価が付いていないアイデア
+  variant="past"    : 過去のアイデア（PDF11枚目、達成／未達成バッジ付き）＝ 評価済みのアイデア
+  どちらも実体は同じideasテーブルで、evaluated（評価済みかどうか）で絞り込んで出し分けている
+  （アイデア登録時の発案者の自己申告は廃止し、企業・自治体が後から達成／未達成を評価する
+   仕様になったため、新着＝評価待ち、過去＝評価が確定したもの、という位置づけにしている）。
 -->
 <script setup>
 import { computed, onMounted } from 'vue'
@@ -29,7 +29,7 @@ function excerpt(text, max = 80) {
 }
 
 onMounted(() => {
-  loadIdeas(props.areaId)
+  loadIdeas(props.areaId, { evaluated: isPast.value })
 })
 </script>
 
@@ -38,7 +38,7 @@ onMounted(() => {
     <header class="idea-page-header">
       <h1>{{ isPast ? '過去のアイデア' : '新着アイデア' }}</h1>
       <p class="idea-page-description">
-        {{ isPast ? '今までに実行されてきたアイデアです！' : '最近発案されたアイデアです！' }}
+        {{ isPast ? '企業・自治体による評価が確定したアイデアです！' : '評価待ちの、最近発案されたアイデアです！' }}
       </p>
     </header>
 

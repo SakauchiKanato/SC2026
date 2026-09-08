@@ -19,7 +19,7 @@ class IdeaController
     private const MAX_CONTENT_LENGTH = 1000;
     private const MAX_REASON_LENGTH = 1000;
 
-    // GET /api/areas/{areaId}/ideas?status=... … 地域ごとのアイデア一覧（新着／過去のアイデア）
+    // GET /api/areas/{areaId}/ideas?status=...&evaluated=... … 地域ごとのアイデア一覧（新着／過去のアイデア）
     public function index(int $areaId): void
     {
         try {
@@ -30,6 +30,7 @@ class IdeaController
 
             $filters = [
                 'status' => $_GET['status'] ?? null,
+                'evaluated' => $_GET['evaluated'] ?? null,
             ];
 
             $ideas = Idea::allForArea($areaId, $filters);
@@ -57,13 +58,20 @@ class IdeaController
     }
 
     // POST /api/areas/{areaId}/ideas … アイデア登録（アイデア入力）
-    // 認証: ログイン中のユーザーIDはAuthMiddleware::requireUserId()経由で
+    // 認証: ログイン中のユーザーの役割(role)はAuthMiddleware::requireAuth()経由で
     //       Authorizationヘッダー（JWT）から取得する。トークンが無い/不正な
     //       場合はAuthMiddleware側で401を返して処理を終了する（ログイン必須）。
+    // 認可: アイデア登録は発案者（role=user）のみ許可する。企業・自治体（role=company）は
+    //       アイデアを評価する側であり、登録することはできない。
     public function store(int $areaId): void
     {
         // トークンが無い/不正な場合はAuthMiddleware内で401を返してexitする
-        $userId = AuthMiddleware::requireUserId();
+        $auth = AuthMiddleware::requireAuth();
+
+        if ($auth['role'] !== 'user') {
+            self::jsonResponse(403, ['message' => 'アイデア登録は発案者アカウントのみ行えます']);
+            return;
+        }
 
         if (!(new Area())->exists($areaId)) {
             self::jsonResponse(404, ['message' => '指定された地域が見つかりません']);
@@ -83,17 +91,67 @@ class IdeaController
         }
 
         try {
+            // status/reasonは発案者の自己申告を廃止したため登録時には含めない
+            // （企業・自治体側がevaluate()で後から達成／未達成を評価する）
             $id = Idea::create([
                 'area_id'   => $areaId,
                 'title'     => trim($input['title']),
-                'status'    => $input['status'],
                 'content'   => trim($input['content']),
-                'reason'    => trim($input['reason']),
-                'user_id'   => $userId,
+                'user_id'   => $auth['id'],
             ]);
 
             $idea = Idea::find($id);
             self::jsonResponse(201, $idea);
+        } catch (Throwable $e) {
+            self::jsonResponse(500, ['message' => $e->getMessage()]);
+        }
+    }
+
+    // PUT /api/ideas/{id}/evaluate … 企業・自治体によるアイデア評価（達成／未達成）
+    // 認可: role=companyであり、かつそのアイデアが紐づく地域(area)の所有者本人のみ許可する
+    //       （他社が登録した地域のアイデアを勝手に評価できないようにする）。
+    public function evaluate(int $id): void
+    {
+        $auth = AuthMiddleware::requireAuth();
+
+        if ($auth['role'] !== 'company') {
+            self::jsonResponse(403, ['message' => 'アイデアの評価は企業・自治体アカウントのみ行えます']);
+            return;
+        }
+
+        $idea = Idea::find($id);
+
+        if ($idea === null) {
+            self::jsonResponse(404, ['message' => '指定されたアイデアが見つかりません']);
+            return;
+        }
+
+        if ((int) $idea['area_owner_id'] !== $auth['id']) {
+            self::jsonResponse(403, ['message' => 'このアイデアを評価する権限がありません']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $errors = self::validateEvaluation($input);
+
+        if (!empty($errors)) {
+            self::jsonResponse(422, [
+                'message' => $errors[0],
+                'errors'  => $errors,
+            ]);
+            return;
+        }
+
+        try {
+            Idea::evaluate($id, [
+                'status'       => $input['status'],
+                'reason'       => trim($input['reason']),
+                'evaluated_by' => $auth['id'],
+            ]);
+
+            $updated = Idea::find($id);
+            self::jsonResponse(200, $updated);
         } catch (Throwable $e) {
             self::jsonResponse(500, ['message' => $e->getMessage()]);
         }
@@ -111,11 +169,6 @@ class IdeaController
             $errors[] = 'タイトルは' . self::MAX_TITLE_LENGTH . '文字以内で入力してください';
         }
 
-        $status = $input['status'] ?? '';
-        if (!in_array($status, ['success', 'failure'], true)) {
-            $errors[] = '結果はsuccess（成功）かfailure（失敗）のいずれかを指定してください';
-        }
-
         $content = trim((string) ($input['content'] ?? ''));
         if ($content === '') {
             $errors[] = 'アイデアの内容を入力してください';
@@ -123,11 +176,24 @@ class IdeaController
             $errors[] = 'アイデアの内容は' . self::MAX_CONTENT_LENGTH . '文字以内で入力してください';
         }
 
+        return $errors;
+    }
+
+    // 企業・自治体によるアイデア評価の入力値検証（Zero Trust）
+    private static function validateEvaluation(array $input): array
+    {
+        $errors = [];
+
+        $status = $input['status'] ?? '';
+        if (!in_array($status, ['success', 'failure'], true)) {
+            $errors[] = '評価はsuccess（達成）かfailure（未達成）のいずれかを指定してください';
+        }
+
         $reason = trim((string) ($input['reason'] ?? ''));
         if ($reason === '') {
-            $errors[] = '理由を入力してください';
+            $errors[] = '評価理由を入力してください';
         } elseif (mb_strlen($reason) > self::MAX_REASON_LENGTH) {
-            $errors[] = '理由は' . self::MAX_REASON_LENGTH . '文字以内で入力してください';
+            $errors[] = '評価理由は' . self::MAX_REASON_LENGTH . '文字以内で入力してください';
         }
 
         return $errors;

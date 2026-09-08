@@ -137,7 +137,8 @@
           <div class="mt-box">{{ area.expected_future || '（未記入）' }}</div>
         </div>
 
-        <div class="area-detail-view__actions">
+        <!-- アイデア登録は発案者（role=user）専用。企業・自治体が他社の地域を見ている場合は表示しない -->
+        <div v-if="user?.role === 'user'" class="area-detail-view__actions">
           <RouterLink :to="{ name: 'idea-new', params: { areaId: area.id } }" class="mt-pill mt-pill--tan">
             アイデア登録はこちらから→
           </RouterLink>

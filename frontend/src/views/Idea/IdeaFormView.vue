@@ -51,8 +51,8 @@ onMounted(loadArea)
       <h1>アイデアを登録する</h1>
       <p class="idea-page-description">
         <template v-if="area">{{ area.name }}に向けて、</template>
-        取り組みたい地域活性化のアイデアと、成功・失敗につながった理由を記録してください。
-        似た土地で挑戦する人の道しるべになります。
+        取り組みたい地域活性化のアイデアを登録してください。
+        達成・未達成の評価は、後ほど地域を登録した企業・自治体が行います。
       </p>
     </header>
 

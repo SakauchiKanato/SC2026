@@ -9,11 +9,14 @@
  * （表示はログインユーザーがその地域の登録者かどうかで切り替える）。
  */
 export default [
+  // アイデア募集地域一覧（新着・過去アイデアへのリンク付き）は企業・自治体専用。
+  // 発案者は自分のホーム画面（HomeView）から直接アイデア登録に進む導線があるため、
+  // このページ自体に来る必要がない（idea.routes.jsのrequiresRoleと同じ方針）。
   {
     path: '/areas',
     name: 'area-list',
     component: () => import('@/views/Area/AreaListView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresRole: 'company' },
   },
   {
     path: '/areas/new',

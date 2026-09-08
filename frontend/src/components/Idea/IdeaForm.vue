@@ -3,21 +3,20 @@ import { reactive } from 'vue'
 
 const MAX_TITLE_LENGTH = 60
 const MAX_CONTENT_LENGTH = 1000
-const MAX_REASON_LENGTH = 1000
 
 const emit = defineEmits(['submit'])
 
+// NOTE: 「結果（成功／失敗）」「理由」は発案者の自己申告を廃止し、
+// 企業・自治体側が後からアイデアを評価する仕様に変更したため、
+// 登録フォームからは削除している（IdeaDetailView.vue側に評価UIを実装）。
 const form = reactive({
   title: '',
-  status: 'success',
   content: '',
-  reason: '',
 })
 
 const errors = reactive({
   title: '',
   content: '',
-  reason: '',
 })
 
 function validate() {
@@ -33,13 +32,7 @@ function validate() {
       : ''
     : 'アイデアの内容を入力してください'
 
-  errors.reason = form.reason.trim()
-    ? form.reason.length > MAX_REASON_LENGTH
-      ? `理由は${MAX_REASON_LENGTH}文字以内で入力してください`
-      : ''
-    : '理由を入力してください'
-
-  return !errors.title && !errors.content && !errors.reason
+  return !errors.title && !errors.content
 }
 
 function handleSubmit() {
@@ -49,12 +42,9 @@ function handleSubmit() {
 
 function resetForm() {
   form.title = ''
-  form.status = 'success'
   form.content = ''
-  form.reason = ''
   errors.title = ''
   errors.content = ''
-  errors.reason = ''
 }
 
 defineExpose({ resetForm })
@@ -76,20 +66,6 @@ defineExpose({ resetForm })
     </div>
 
     <div class="idea-form__field">
-      <span class="idea-form__label">結果</span>
-      <div class="idea-form__status-options">
-        <label class="idea-form__status-option">
-          <input v-model="form.status" type="radio" name="idea-status" value="success" />
-          成功
-        </label>
-        <label class="idea-form__status-option">
-          <input v-model="form.status" type="radio" name="idea-status" value="failure" />
-          失敗
-        </label>
-      </div>
-    </div>
-
-    <div class="idea-form__field">
       <label for="idea-content">アイデアの内容</label>
       <textarea
         id="idea-content"
@@ -101,20 +77,6 @@ defineExpose({ resetForm })
       ></textarea>
       <p class="idea-form__char-count">{{ form.content.length }} / {{ MAX_CONTENT_LENGTH }}</p>
       <p v-if="errors.content" class="idea-form__error" role="alert">{{ errors.content }}</p>
-    </div>
-
-    <div class="idea-form__field">
-      <label for="idea-reason">{{ form.status === 'success' ? '成功した理由' : '失敗した理由' }}</label>
-      <textarea
-        id="idea-reason"
-        v-model="form.reason"
-        rows="5"
-        :maxlength="MAX_REASON_LENGTH"
-        placeholder="うまくいった／いかなかった要因を書いてください"
-        :aria-invalid="Boolean(errors.reason)"
-      ></textarea>
-      <p class="idea-form__char-count">{{ form.reason.length }} / {{ MAX_REASON_LENGTH }}</p>
-      <p v-if="errors.reason" class="idea-form__error" role="alert">{{ errors.reason }}</p>
     </div>
 
     <button type="submit" class="idea-button">アイデアを登録する</button>
@@ -162,18 +124,6 @@ defineExpose({ resetForm })
 .idea-form__field input[aria-invalid='true'],
 .idea-form__field textarea[aria-invalid='true'] {
   border-color: var(--idea-color-danger);
-}
-
-.idea-form__status-options {
-  display: flex;
-  gap: var(--idea-spacing-md);
-}
-
-.idea-form__status-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 400;
 }
 
 .idea-form__char-count {
