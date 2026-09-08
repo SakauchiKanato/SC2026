@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import '../../assets/idea-theme.css'
 import IdeaForm from '../../components/Idea/IdeaForm.vue'
 import { useIdeaStore } from '../../store/idea'
@@ -12,14 +13,13 @@ const props = defineProps({
   },
 })
 
+const router = useRouter()
 const { errorMessage, registerIdea } = useIdeaStore()
 
 const area = ref(null)
 const loadError = ref('')
 
-const formRef = ref(null)
 const isSubmitting = ref(false)
-const successMessage = ref('')
 
 async function loadArea() {
   try {
@@ -31,11 +31,10 @@ async function loadArea() {
 
 async function handleSubmit(payload) {
   isSubmitting.value = true
-  successMessage.value = ''
   try {
     await registerIdea(props.areaId, payload)
-    successMessage.value = 'アイデアを登録しました。'
-    formRef.value?.resetForm()
+    // 登録が完了したら、最初の「おかえりなさい」画面（ホーム）に戻る
+    router.push({ name: 'home' })
   } catch {
     // エラー内容はstoreのerrorMessageで表示するため、ここでは何もしない
   } finally {
@@ -58,14 +57,11 @@ onMounted(loadArea)
     </header>
 
     <p v-if="loadError" class="idea-banner idea-banner--error">{{ loadError }}</p>
-    <p v-if="successMessage" class="idea-banner idea-banner--success" role="status">
-      {{ successMessage }}
-    </p>
     <p v-if="errorMessage" class="idea-banner idea-banner--error" role="alert">
       {{ errorMessage }}
     </p>
 
-    <IdeaForm ref="formRef" @submit="handleSubmit" />
+    <IdeaForm @submit="handleSubmit" />
 
     <p v-if="isSubmitting" class="idea-loading-indicator">登録中です…</p>
   </section>

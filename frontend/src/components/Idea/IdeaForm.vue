@@ -76,6 +76,20 @@ defineExpose({ resetForm })
     </div>
 
     <div class="idea-form__field">
+      <span class="idea-form__label">結果</span>
+      <div class="idea-form__status-options">
+        <label class="idea-form__status-option">
+          <input v-model="form.status" type="radio" name="idea-status" value="success" />
+          成功
+        </label>
+        <label class="idea-form__status-option">
+          <input v-model="form.status" type="radio" name="idea-status" value="failure" />
+          失敗
+        </label>
+      </div>
+    </div>
+
+    <div class="idea-form__field">
       <label for="idea-content">アイデアの内容</label>
       <textarea
         id="idea-content"
@@ -89,7 +103,19 @@ defineExpose({ resetForm })
       <p v-if="errors.content" class="idea-form__error" role="alert">{{ errors.content }}</p>
     </div>
 
-    
+    <div class="idea-form__field">
+      <label for="idea-reason">{{ form.status === 'success' ? '成功した理由' : '失敗した理由' }}</label>
+      <textarea
+        id="idea-reason"
+        v-model="form.reason"
+        rows="5"
+        :maxlength="MAX_REASON_LENGTH"
+        placeholder="うまくいった／いかなかった要因を書いてください"
+        :aria-invalid="Boolean(errors.reason)"
+      ></textarea>
+      <p class="idea-form__char-count">{{ form.reason.length }} / {{ MAX_REASON_LENGTH }}</p>
+      <p v-if="errors.reason" class="idea-form__error" role="alert">{{ errors.reason }}</p>
+    </div>
 
     <button type="submit" class="idea-button">アイデアを登録する</button>
   </form>
