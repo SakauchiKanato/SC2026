@@ -12,6 +12,12 @@
 
   NOTE: ProposerHome.dc.htmlにはカード上部にタグ（例：「若者文化 × 交通結節点」）が
         あるが、チームの意向で今回は表示しないことにした。
+
+  NOTE: 「募集◯件」バッジは area.open_requests_count（現在「企業・自治体が
+        実現したいこと」として掲示板に投稿されている件数）を表示する。
+        area.ideas_count（発案者からの累計アイデア投稿数）とは別の値なので
+        取り違えないこと（2026-09-09 修正：以前は誤ってideas_countを
+        表示していた）。
 -->
 <script setup>
 defineProps({
@@ -32,7 +38,7 @@ defineProps({
       <h3 class="mt-area-card__name">{{ area.name }}</h3>
 
       <div class="mt-area-card__footer">
-        <span class="mt-area-card__count-badge">募集 {{ area.ideas_count ?? 0 }}件</span>
+        <span class="mt-area-card__count-badge">募集 {{ area.open_requests_count ?? 0 }}件</span>
         <RouterLink :to="{ name: 'area-detail', params: { id: area.id } }" class="mt-area-card__detail-link">
           詳細をみる
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -44,7 +50,7 @@ defineProps({
 
     <template v-else>
       <h3 class="mt-area-card__name">{{ area.name }}</h3>
-      <p class="mt-area-card__meta">募集{{ area.ideas_count ?? 0 }}件</p>
+      <p class="mt-area-card__meta">募集{{ area.open_requests_count ?? 0 }}件</p>
       <RouterLink :to="{ name: 'area-detail', params: { id: area.id } }" class="mt-area-card__link">
         詳細をみる
       </RouterLink>

@@ -22,7 +22,7 @@ describe('AreaCard', () => {
   it('mode="home": 名前・募集件数バッジ・詳細リンクを表示する', async () => {
     const wrapper = await mountCard({
       mode: 'home',
-      area: { id: 1, name: '東京都渋谷区', ideas_count: 3 },
+      area: { id: 1, name: '東京都渋谷区', open_requests_count: 3 },
     })
 
     expect(wrapper.text()).toContain('東京都渋谷区')
@@ -35,7 +35,7 @@ describe('AreaCard', () => {
   it('mode="browse": 「新着アイデア」「過去のアイデア」リンクを表示する', async () => {
     const wrapper = await mountCard({
       mode: 'browse',
-      area: { id: 1, name: '東京都渋谷区', ideas_count: 2 },
+      area: { id: 1, name: '東京都渋谷区', open_requests_count: 2 },
     })
 
     expect(wrapper.text()).toContain('新着アイデア')

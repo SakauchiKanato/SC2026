@@ -41,6 +41,12 @@ class Area
     /**
      * 全件取得（一覧表示用）。各Areaに紐づくタグも含める
      *
+     * ideas_count（発案者から寄せられたアイデアの累計件数）と
+     * open_requests_count（現在「企業・自治体が実現したいこと」として
+     * 掲示板に投稿されている件数＝地域一覧カードの「募集◯件」バッジに使う値）
+     * を、それぞれサブクエリで付与する。両者は意味が異なる別のカウントなので
+     * 混同しないこと。
+     *
      * @return array<int, array<string, mixed>>
      */
     public function all(): array
@@ -50,7 +56,8 @@ class Area
                     population, day_night_population_ratio, average_age,
                     main_industry, transit_access, other,
                     created_at, updated_at,
-                    (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
+                    (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count,
+                    (SELECT COUNT(*) FROM area_challenge_requests acr WHERE acr.area_id = ' . self::TABLE . '.id) AS open_requests_count
              FROM ' . self::TABLE . '
              ORDER BY created_at DESC'
         );
@@ -82,7 +89,8 @@ class Area
                     population, day_night_population_ratio, average_age,
                     main_industry, transit_access, other,
                     created_at, updated_at,
-                    (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count
+                    (SELECT COUNT(*) FROM ideas i WHERE i.area_id = ' . self::TABLE . '.id) AS ideas_count,
+                    (SELECT COUNT(*) FROM area_challenge_requests acr WHERE acr.area_id = ' . self::TABLE . '.id) AS open_requests_count
              FROM ' . self::TABLE . '
              WHERE id = :id'
         );
