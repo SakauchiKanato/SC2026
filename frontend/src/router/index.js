@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/Auth/LoginView.vue'
 import SignupView from '../views/Auth/SignupView.vue'
@@ -42,9 +42,28 @@ const routes = [
 ]
 
 const router = createRouter({
-  // import.meta.env.BASE_URLはビルド時の--baseオプションと連動する
-  // サブフォルダ配信（例: /~user/project/）でもURLがずれないようにするため必須。
-  history: createWebHistory(import.meta.env.BASE_URL),
+  // hashモード（URL末尾に "#/" を挟む方式。例: https://.../SC2026/#/areas/1）。
+  //
+  // なぜhistoryモード（createWebHistory）から変更したか:
+  //   history.pushState方式は、/areas/1のようなURLへの直接アクセス・
+  //   リロード時に、サーバー側でindex.htmlへのフォールバック設定
+  //   （frontend/public/.htaccessのFallbackResource・mod_rewrite）が
+  //   効いている必要がある。本番サーバー（gms.gdl.jp）ではその設定を
+  //   入れても直接アクセス時に素のApache 404が返る不具合が本番QAで
+  //   確認された。原因はサーバー側のAllowOverride設定等の可能性が高いが、
+  //   管理者権限で本番サーバーに入る手段が無いため、こちらからは
+  //   確認・修正ができない（経緯はfrontend/public/.htaccessのコメント参照）。
+  //
+  //   hashモード（createWebHashHistory）は「#」より後ろの部分
+  //   （例: #/areas/1）を一切サーバーに送信しないため、サーバーは
+  //   常にindex.htmlだけを返せばよく、上記のサーバー設定に依存しない。
+  //   トレードオフとして全URLの形が変わる（共有リンクやブラウザ履歴の
+  //   見た目が変わる。SEO上も不利になりうる）。
+  //
+  //   サーバー側のAllowOverride設定を直せる場合は、このコミットを取り消す
+  //   （createWebHistory(import.meta.env.BASE_URL)に戻す）ことでURL形式を
+  //   元に戻せる。
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes,
 })
 
